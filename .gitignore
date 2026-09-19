@@ -1,0 +1,27 @@
+# Codexが参照する非公開設計資料
+/docs/
+
+# 本人専用の作業メモ
+/MEMO.md
+
+# ローカルに保存する証跡・実験成果物
+/evidence/
+/artifacts/
+
+# Terraformのローカル生成物・状態・plan
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.json
+*.tfvars
+*.tfvars.json
+
+# 一般的な秘密・ログ
+*.pem
+*.key
+*.secret
+*.log
+.env
+.env.*
+
