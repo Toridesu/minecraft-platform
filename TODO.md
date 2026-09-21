@@ -30,8 +30,9 @@
 - [x] T-002 当フォルダのGit管理単位とローカルツールを準備。完了：他projectを含めず、state/plan/secret除外、固定版で静的検査可能。依存：T-001。
 - [x] T-003 bootstrapの最小S3/OIDC境界/予算メールを設計どおり構築。完了：S3 State作成・保護・backend移行、共有資源の読み取り確認、OIDC Provider/IAM Role/PolicyのApplyと実リソース検証、料金影響の確認。依存：T-002。試験：AT-14、AT-24。
 - [ ] T-004 AWSなしのPR静的CIを作る。完了：fmt/validate/lint/scanと失敗時停止。AWS認証・remote backend・plan/apply/destroyを含めず、mergeのみで課金資源を作らない。依存：T-002。試験：AT-09。
+  - [x] T-004-01 Git境界とCI対象を確認する。完了：Git root/remote/対象branchを確認し、`docs/`、`MEMO.md`、state、plan、secret、ローカル証跡がGit対象外であることを確認。AWS認証情報をCIへ渡さない方針を決める。
+  - [x] T-004-02 ローカル検査ツールを確認する。完了：Terraform、TFLint、Trivy、Gitの利用可否と固定候補版を記録。未導入なら導入方法と公式配布元を確認し、無関係なツールは追加しない。
   - [ ] T-004-03 Terraformの静的検査をローカルで成立させる。完了：対象rootごとに`terraform fmt -check`、`terraform init -backend=false`、`terraform validate`が通る。backendなしのためremote state/AWS APIを使わないことを確認。
-    - 現状：Terraform 1.15.8、TFLint 0.64.0、Trivy 0.74.0、Git 2.42.0を確認。fmt/init/validateの設定検査は成功したが、AWS providerが`sts:GetCallerIdentity`を呼び出したため、AWS APIを使わない条件は未達。原因を切り分けてから完了とする。
   - [ ] T-004-04 Lint・セキュリティ検査の基準を決める。完了：`.tflint.hcl`、`tflint --init`、`tflint`、Trivyのconfig/secret scanを最小構成で実行。除外は理由・期限を残し、警告の無条件無視をしない。
   - [ ] T-004-05 GitHub Actions workflowを設計する。完了：`pull_request`と手動実行だけを起点にし、`permissions: contents: read`、固定SHAのAction、AWS認証なし、backendなし検査、失敗時停止を設計レビュー。
   - [ ] T-004-06 静的CI設定を実装する。完了：workflowと必要最小限の設定ファイルを追加。`id-token: write`、`configure-aws-credentials`、`terraform plan/apply/destroy`、AWS CLI実行を含めない。
