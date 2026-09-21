@@ -1,12 +1,22 @@
 # Production Minecraft Platform — TODO v2.0
 
-現在：**設計更新のみ。実装・AWS作成/削除・GitHub設定は未着手。**
+現在：**bootstrapのS3 State作成・S3 backend移行、OIDC Provider/IAM Role/PolicyのApply・実リソース確認まで完了。GitHub CI/CD・Minecraft実装は未着手。**
 
 ## 進め方
 
 1回のAWS作業を「作成→確認→証跡→撤去」で閉じる。タスクをまたいでAWSを放置せず、必要なら次回再applyする。依存は学習・コードの準備順であり、前タスクの資源を常設する意味ではない。
 
 チェックは実測と証跡が揃ってから付ける。旧版のタスク番号/完了条件は本一覧で置き換える。[ラボ一覧](docs/13_learning_labs.md)、[受入試験](docs/09_acceptance.md)、[撤去手順](docs/14_teardown.md)を併用する。
+
+### サブタスクの進め方
+
+- 1つの親タスク（例：`T-003`）を、実行可能な小さなサブタスク（例：`T-003-01`、`T-003-02`）へ分解する。
+- サブタスクを開始する前に、学習上の意味、なぜ必要か、今回確認することを説明する。
+- その後、実行手順・Bashコマンド・期待結果・失敗時の確認方法を提示する。
+- コマンドの実行、AWS操作、結果確認は本人が行う。`apply`、`destroy`、削除などの操作は実行前に対象・費用・戻し方を確認する。
+- 本人が結果を共有したら、成功条件と次のサブタスクを一緒に確認する。
+- サブタスクの完了条件と証跡が揃ったら、完了したサブタスクの行はこのファイルから削除してよい。`MEMO.md`への記録は任意であり、内容・形式・整理方法は本人が自由に決める。
+- 親タスクはサブタスクがすべて完了するまで残し、親タスクの完了条件を満たした時点で完了扱いにする。
 
 ## D0 設計
 
@@ -16,10 +26,20 @@
 
 ## M0 AWSを作る前の準備
 
-- [ ] T-001 [入力値](docs/11_project_inputs.md)を確認。完了：本人の月額/1回上限、account、disposable条件、ローカル保存先が明確。
-- [ ] T-002 当フォルダのGit管理単位とローカルツールを準備。完了：他projectを含めず、state/plan/secret除外、固定版で静的検査可能。依存：T-001。
-- [ ] T-003 bootstrapの最小S3/OIDC境界/予算メールを設計どおり構築。完了：state移行・保護、共有資源の棚卸し、料金記録。依存：T-002。試験：AT-14、AT-24。
-- [ ] T-004 AWSなしのPR静的CIを作る。完了：fmt/validate/lint/scanと失敗時停止。mergeのみで課金資源を作らない。依存：T-002。試験：AT-09。
+- [x] T-001 [入力値](docs/11_project_inputs.md)を確認。完了：本人の月額/1回上限、account、disposable条件、ローカル保存先が明確。
+- [x] T-002 当フォルダのGit管理単位とローカルツールを準備。完了：他projectを含めず、state/plan/secret除外、固定版で静的検査可能。依存：T-001。
+- [x] T-003 bootstrapの最小S3/OIDC境界/予算メールを設計どおり構築。完了：S3 State作成・保護・backend移行、共有資源の読み取り確認、OIDC Provider/IAM Role/PolicyのApplyと実リソース検証、料金影響の確認。依存：T-002。試験：AT-14、AT-24。
+- [ ] T-004 AWSなしのPR静的CIを作る。完了：fmt/validate/lint/scanと失敗時停止。AWS認証・remote backend・plan/apply/destroyを含めず、mergeのみで課金資源を作らない。依存：T-002。試験：AT-09。
+  - [ ] T-004-01 Git境界とCI対象を確認する。完了：Git root/remote/対象branchを確認し、`docs/`、`MEMO.md`、state、plan、secret、ローカル証跡がGit対象外であることを確認。AWS認証情報をCIへ渡さない方針を決める。
+  - [ ] T-004-02 ローカル検査ツールを確認する。完了：Terraform、TFLint、Trivy、Gitの利用可否と固定候補版を記録。未導入なら導入方法と公式配布元を確認し、無関係なツールは追加しない。
+  - [ ] T-004-03 Terraformの静的検査をローカルで成立させる。完了：対象rootごとに`terraform fmt -check`、`terraform init -backend=false`、`terraform validate`が通る。backendなしのためremote state/AWS APIを使わないことを確認。
+  - [ ] T-004-04 Lint・セキュリティ検査の基準を決める。完了：`.tflint.hcl`、`tflint --init`、`tflint`、Trivyのconfig/secret scanを最小構成で実行。除外は理由・期限を残し、警告の無条件無視をしない。
+  - [ ] T-004-05 GitHub Actions workflowを設計する。完了：`pull_request`と手動実行だけを起点にし、`permissions: contents: read`、固定SHAのAction、AWS認証なし、backendなし検査、失敗時停止を設計レビュー。
+  - [ ] T-004-06 静的CI設定を実装する。完了：workflowと必要最小限の設定ファイルを追加。`id-token: write`、`configure-aws-credentials`、`terraform plan/apply/destroy`、AWS CLI実行を含めない。
+  - [ ] T-004-07 正常系をローカルで検証する。完了：fmt/validate/lint/scanがすべて成功し、出力にsecret/state/個人用資料が含まれない。
+  - [ ] T-004-08 失敗系を安全に検証する。完了：専用の一時branchまたは一時ファイルでformat/validate/lint/secretの少なくとも1件を失敗させ、検査が停止することを確認。試験後は一時変更を明示して取り除く。
+  - [ ] T-004-09 GitHub上のPRで検証する。完了：Actionsが成功・失敗を正しく表示し、AWSリソース作成・AWS認証・remote stateアクセスが発生しないことをworkflow/log/CloudTrail Event historyで確認。
+  - [ ] T-004-10 受入と後片付けを行う。完了：AT-09の証跡、利用したActions分数の確認、不要artifactの削除、残る設定の確認。全サブタスク完了後は本一覧からサブタスク行を削除し、親T-004を完了にする。
 - [ ] T-005 cleanup仕様・所有物台帳・費用試算を準備。完了：生成物も含む削除順、失敗時再開、bootstrap除外が説明できる。依存：T-001～T-003。試験：AT-13、AT-24の準備。
 
 M0出口：何を作り、いくら使い、どう片付けるかが先に分かる。
@@ -90,4 +110,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次の1手はT-001。今回の作業ではAWSの作成やdestroyを実行しない。**
+**次の1手はT-004-01。AWSリソースを作成せず、Git管理範囲とローカル検査ツールを確認する。**
