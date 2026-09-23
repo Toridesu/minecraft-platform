@@ -17,6 +17,7 @@
 - 本人が結果を共有したら、成功条件と次のサブタスクを一緒に確認する。
 - サブタスクの完了条件と証跡が揃ったら、完了したサブタスクの行はこのファイルから削除してよい。`MEMO.md`への記録は任意であり、内容・形式・整理方法は本人が自由に決める。
 - 親タスクはサブタスクがすべて完了するまで残し、親タスクの完了条件を満たした時点で完了扱いにする。
+- サブタスク完了後は、`TODO.md`を直ちに更新し、変更をコミットしてGitHubへpushする。push前に対象branch・remote・公開対象を確認し、`docs/`・`MEMO.md`・秘密情報は含めない。
 
 ## D0 設計
 
@@ -32,7 +33,8 @@
 - [ ] T-004 AWSなしのPR静的CIを作る。完了：fmt/validate/lint/scanと失敗時停止。AWS認証・remote backend・plan/apply/destroyを含めず、mergeのみで課金資源を作らない。依存：T-002。試験：AT-09。
   - [x] T-004-01 Git境界とCI対象を確認する。完了：Git root/remote/対象branchを確認し、`docs/`、`MEMO.md`、state、plan、secret、ローカル証跡がGit対象外であることを確認。AWS認証情報をCIへ渡さない方針を決める。
   - [x] T-004-02 ローカル検査ツールを確認する。完了：Terraform、TFLint、Trivy、Gitの利用可否と固定候補版を記録。未導入なら導入方法と公式配布元を確認し、無関係なツールは追加しない。
-  - [ ] T-004-03 Terraformの静的検査をローカルで成立させる。完了：対象rootごとに`terraform fmt -check`、`terraform init -backend=false`、`terraform validate`が通る。backendなしのためremote state/AWS APIを使わないことを確認。
+- [ ] T-004-03 Terraformの静的検査をローカルで成立させる。完了：対象rootごとに`terraform fmt -check`、`terraform init -backend=false`、`terraform validate`が通る。backendなしのためremote state/AWS APIを使わないことを確認。
+  - [x] T-004-03-01 Terraformの要求版、対象root、Git状態を確認。完了：Terraform v1.15.8、bootstrap/runtimeの`versions.tf`、Git状態を確認し、AWS APIを使っていない。最新版への更新は要求版固定のため保留。
   - [ ] T-004-04 Lint・セキュリティ検査の基準を決める。完了：`.tflint.hcl`、`tflint --init`、`tflint`、Trivyのconfig/secret scanを最小構成で実行。除外は理由・期限を残し、警告の無条件無視をしない。
   - [ ] T-004-05 GitHub Actions workflowを設計する。完了：`pull_request`と手動実行だけを起点にし、`permissions: contents: read`、固定SHAのAction、AWS認証なし、backendなし検査、失敗時停止を設計レビュー。
   - [ ] T-004-06 静的CI設定を実装する。完了：workflowと必要最小限の設定ファイルを追加。`id-token: write`、`configure-aws-credentials`、`terraform plan/apply/destroy`、AWS CLI実行を含めない。
