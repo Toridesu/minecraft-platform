@@ -34,9 +34,11 @@
 - [ ] T-004 AWSなしのPR静的CIを作る。完了：fmt/validate/lint/scanと失敗時停止。AWS認証・remote backend・plan/apply/destroyを含めず、mergeのみで課金資源を作らない。依存：T-002。試験：AT-09。
   - [x] T-004-01 Git境界とCI対象を確認する。完了：Git root/remote/対象branchを確認し、`docs/`、`MEMO.md`、state、plan、secret、ローカル証跡がGit対象外であることを確認。AWS認証情報をCIへ渡さない方針を決める。
   - [x] T-004-02 ローカル検査ツールを確認する。完了：Terraform、TFLint、Trivy、Gitの利用可否と固定候補版を記録。未導入なら導入方法と公式配布元を確認し、無関係なツールは追加しない。
-- [ ] T-004-03 Terraformの静的検査をローカルで成立させる。完了：対象rootごとに`terraform fmt -check`、`terraform init -backend=false`、`terraform validate`が通る。backendなしのためremote state/AWS APIを使わないことを確認。
-  - [x] T-004-03-01 Terraformの要求版、対象root、Git状態を確認。完了：Terraform v1.15.8、bootstrap/runtimeの`versions.tf`、Git状態を確認し、AWS APIを使っていない。最新版への更新は要求版固定のため保留。
+- [ ] T-004-03 Terraformの静的検査をローカルで成立させる。完了：対象rootごとに`terraform fmt -check`、`terraform init -backend=false`、`terraform validate`が通る。backendなしでremote stateへ接続しないことを確認し、providerの認証確認などAWS API接続の有無を明記する。
+  - [x] T-004-03-01 Terraformの要求版、対象root、Git状態を確認。完了：Terraform v1.15.8、bootstrap/runtimeの`versions.tf`、Git状態を確認。この確認自体ではAWS APIを使っていない。最新版への更新は要求版固定のため保留。
   - [x] T-004-03-02 Terraformのフォーマットを確認。完了：bootstrapとsession-runtimeの`terraform fmt -check`がともに終了コード0。ファイル変更なし。
+  - [x] T-004-03-03 Terraformをbackendなしで初期化。完了：`AWS_PROFILE=cdk-dev terraform ... init -backend=false`をbootstrapとsession-runtimeで実行し、ともに終了コード0。remote backendへ接続せず、AWSリソースは作成していない。一方、AWS Providerの認証確認によりSTS APIへの接続が発生することを確認。無効な`default`では失敗し、有効な`cdk-dev`で成功。
+  - [x] T-004-03-04 Terraformの設定検証を確認。完了：bootstrapとsession-runtimeの`terraform validate`がともに`Success! The configuration is valid.`および終了コード0。
   - [ ] T-004-04 Lint・セキュリティ検査の基準を決める。完了：`.tflint.hcl`、`tflint --init`、`tflint`、Trivyのconfig/secret scanを最小構成で実行。除外は理由・期限を残し、警告の無条件無視をしない。
   - [ ] T-004-05 GitHub Actions workflowを設計する。完了：`pull_request`と手動実行だけを起点にし、`permissions: contents: read`、固定SHAのAction、AWS認証なし、backendなし検査、失敗時停止を設計レビュー。
   - [ ] T-004-06 静的CI設定を実装する。完了：workflowと必要最小限の設定ファイルを追加。`id-token: write`、`configure-aws-credentials`、`terraform plan/apply/destroy`、AWS CLI実行を含めない。
@@ -114,4 +116,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次の1手はT-004-03。AWS providerの認証確認を切り分け、AWS APIなしで静的検査を成立させる。**
+**次の1手はT-004-04。Lint・セキュリティ検査の基準を決める。**
