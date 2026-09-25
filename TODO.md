@@ -35,6 +35,11 @@
 - [x] T-003 bootstrapの最小S3/OIDC境界/予算メールを設計どおり構築。完了：S3 State作成・保護・backend移行、共有資源の読み取り確認、OIDC Provider/IAM Role/PolicyのApplyと実リソース検証、料金影響の確認。依存：T-002。試験：AT-14、AT-24。
 - [x] T-004 AWSなしのPR静的CIを作る。完了：fmt/validate/lint/scanと失敗時停止を確認。PR上の`Terraform Static Checks`は44秒で成功。Workflow定義とActionsログで、AWS認証・AWS CLI・remote backend・`terraform plan/apply/destroy`がないことを確認し、CloudTrailの追加確認は省略。不要な`.terraform`、tfplan、空のlocal stateを削除し、`MEMO.md`、`docs/`、state backupは保持。依存：T-002。試験：AT-09。
 - [ ] T-005 cleanup仕様・所有物台帳・費用試算を準備。完了：生成物も含む削除順、失敗時再開、bootstrap除外が説明できる。依存：T-001～T-003。試験：AT-13、AT-24の準備。
+  - [ ] T-005-01 現在のAWSリソースとTerraform管理対象を棚卸しする。完了：リソース、state、backend、管理責任の対応関係を読み取り確認する。AWS変更操作は行わない。
+  - [ ] T-005-02 cleanup仕様と削除順序を作成する。完了：生成物、実行対象、bootstrapを区別し、失敗時の再開手順を説明できる。
+  - [ ] T-005-03 所有物台帳を作成する。完了：各リソースの所有者、用途、保持条件、削除判断、確認方法を記録する。
+  - [ ] T-005-04 費用試算と残置・削除判断基準を作成する。完了：常時費用、実行時費用、無料枠依存、月額契約の有無を整理する。
+  - [ ] T-005-05 受入条件と再開手順を確認する。完了：cleanup仕様、所有物台帳、費用試算が相互に矛盾せず、次回作業を安全に再開できる。
 
 M0出口：何を作り、いくら使い、どう片付けるかが先に分かる。
 
