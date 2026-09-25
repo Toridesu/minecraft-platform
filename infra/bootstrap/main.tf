@@ -14,6 +14,10 @@ resource "aws_s3_bucket_versioning" "terraform_state" {
   }
 }
 
+# Intentional exception: this short-lived learning backend uses SSE-S3 (AES256).
+# Customer-managed KMS is deferred because it adds key lifecycle and cost.
+# Review deadline: 2026-12-31, or earlier if this backend becomes long-lived.
+#trivy:ignore:AWS-0132
 resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" {
   bucket = aws_s3_bucket.terraform_state.id
 

@@ -1,0 +1,133 @@
+name: Terraform Static Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-static-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  static-checks:
+    name: Terraform static checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      AWS_EC2_METADATA_DISABLED: "true"
+      TF_IN_AUTOMATION: "true"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: "1.15.8"
+          terraform_wrapper: false
+
+      - name: Set up TFLint
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
+        with:
+          tflint_version: "v0.64.0"
+          cache: false
+
+      - name: Set up Trivy
+        uses: aquasecurity/setup-trivy@e07451d2e059ed86c2870430ea286b3a9e0bf241
+        with:
+          version: "v0.74.0"
+          cache: false
+
+      - name: Check Terraform formatting
+        run: |
+          set -euo pipefail
+          terraform fmt -check -diff infra/bootstrap
+          terraform fmt -check -diff infra/environments/lab/session-runtime
+
+      - name: Initialize providers and validate Terraform
+        run: |
+          set -euo pipefail
+
+          validate_root() (
+            root="$1"
+            validation_dir="$(mktemp -d)"
+            trap 'rm -rf -- "$validation_dir"' EXIT
+
+            for tf_file in "${root}"/*.tf; do
+              if [[ "${tf_file}" == "${root}/backend.tf" ]]; then
+                continue
+              fi
+
+              cp "${tf_file}" "${validation_dir}/"
+            done
+
+            cp "${root}/.terraform.lock.hcl" "${validation_dir}/"
+
+            (
+              cd "${validation_dir}"
+
+              terraform init \
+                -backend=false \
+                -input=false \
+                -lockfile=readonly \
+                -no-color
+
+              terraform validate -no-color
+            )
+          )
+
+          validate_root infra/bootstrap
+          validate_root infra/environments/lab/session-runtime
+
+      - name: Initialize TFLint plugins
+        run: |
+          set -euo pipefail
+          tflint --init --config "${GITHUB_WORKSPACE}/.tflint.hcl"
+
+      - name: Run TFLint
+        run: |
+          set -euo pipefail
+          tflint --config "${GITHUB_WORKSPACE}/.tflint.hcl" \
+            --chdir=infra/bootstrap \
+            --format=compact
+          tflint --config "${GITHUB_WORKSPACE}/.tflint.hcl" \
+            --chdir=infra/environments/lab/session-runtime \
+            --format=compact
+
+      - name: Scan Terraform configuration with Trivy
+        run: |
+          set -euo pipefail
+          trivy config \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --skip-dirs "**/.terraform" \
+            --skip-files "**/*.tfstate" \
+            --skip-files "**/*.tfstate.*" \
+            --skip-files "**/*.tfplan" \
+            --skip-files "**/*.tfplan.*" \
+            infra
+
+      - name: Scan repository secrets with Trivy
+        run: |
+          set -euo pipefail
+          trivy fs \
+            --scanners secret \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --skip-dirs .git \
+            --skip-dirs .terraform \
+            --skip-dirs .tflint.d \
+            .
