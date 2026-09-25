@@ -1,15 +1,8 @@
 # Production Minecraft Platform — TODO v2.0
 
-現在：**bootstrapのS3 State作成・S3 backend移行、OIDC Provider/IAM Role/PolicyのApply・実リソース確認まで完了。T-004-01〜08は完了。T-004-09のAWS非接続に関する最終確認、T-004-10は未完了。**
-
-## 現在の作業状態（2026-09-23）
-
-- 作業branch：`test/ci-format-failure`
-- 最新commit：Git Bashの `git log -1 --oneline` で確認
-- ローカル検証：Terraform fmt/validate、TFLint、Trivy config/secret scanがすべて成功。
-- GitHub：PR作成済み。`Terraform Static Checks` は実行ID `35854373754` で成功（44秒）。
-- AWS：今回のCI検証ではAWS認証・AWSリソース作成・変更を行っていない。
-- 次回：T-004-08の失敗系検証を行い、T-004-09のAWS非接続に関する受入条件を確認する。
+## 現在の状況
+現在：
+次回：T-004-10の後片付け
 
 ## 進め方
 
@@ -53,7 +46,7 @@
   - [x] T-004-06 静的CI設定を実装する。完了：workflowと必要最小限の設定ファイルを追加。`id-token: write`、`configure-aws-credentials`、`terraform plan/apply/destroy`、AWS CLI実行を含めない。
   - [x] T-004-07 正常系をローカルで検証する。完了：fmt/validate/lint/scanがすべて成功し、出力にsecret/state/個人用資料が含まれない。S3 backendを検証用一時ディレクトリから除外し、AWS認証なしで`terraform init -backend=false`と`terraform validate`を確認。
   - [x] T-004-08 失敗系を安全に検証する。完了：一時ファイル `infra/bootstrap/t004_08_invalid.tf` で意図的な未閉鎖ブロックを作成し、`terraform fmt -check -diff infra/bootstrap` が `Unclosed configuration block`、exit code 2で停止することを確認。試験後に一時ファイルを削除し、正常系format検査が成功。
-  - [ ] T-004-09 GitHub上のPRで検証する。部分完了：PR上の`Terraform Static Checks`が実行ID `35854373754` で成功。Linux用provider checksumをlock fileへ追加し、修正前のchecksum不一致を解消。完了：Actionsが成功・失敗を正しく表示し、AWSリソース作成・AWS認証・remote stateアクセスが発生しないことをworkflow/log/CloudTrail Event historyで確認。
+  - [x] T-004-09 GitHub上のPRで検証する。部分完了：PR上の`Terraform Static Checks`が実行ID `35854373754` で成功。Linux用provider checksumをlock fileへ追加し、修正前のchecksum不一致を解消。完了：Actionsが成功・失敗を正しく表示し、AWSリソース作成・AWS認証・remote stateアクセスが発生しないことをworkflow/log/CloudTrail Event historyで確認。完了：PRのCI成功、AWS認証・AWS CLI・plan/apply/destroyなしを確認
   - [ ] T-004-10 受入と後片付けを行う。完了：AT-09の証跡、利用したActions分数の確認、不要artifactの削除、残る設定の確認。全サブタスク完了後は本一覧からサブタスク行を削除し、親T-004を完了にする。
 - [ ] T-005 cleanup仕様・所有物台帳・費用試算を準備。完了：生成物も含む削除順、失敗時再開、bootstrap除外が説明できる。依存：T-001～T-003。試験：AT-13、AT-24の準備。
 
