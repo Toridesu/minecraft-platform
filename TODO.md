@@ -1,8 +1,8 @@
 # Production Minecraft Platform — TODO v2.0
 
 ## 現在の状況
-現在：**T-004-01〜10完了。T-005-01〜04完了。AWSなしのPR静的CIを検証し、不要なローカル生成物を整理。AWS上の管理対象とstateの存在状況、cleanup境界・順序、所有物台帳、費用判断基準を整理済み。**
-次回：T-005-05（受入条件と再開手順の確認）を開始する。
+現在：**T-004-01〜10、T-005-01〜05完了。AWSなしのPR静的CIを検証し、不要なローカル生成物を整理。AWS上の管理対象とstateの存在状況、cleanup境界・順序、所有物台帳、費用判断基準、受入・再開手順を整理済み。**
+次回：M1のT-101（core profileのVPC/SG/EC2/SSM/systemd）を開始する。
 
 ## 進め方
 
@@ -34,12 +34,12 @@
 - [x] T-002 当フォルダのGit管理単位とローカルツールを準備。完了：他projectを含めず、state/plan/secret除外、固定版で静的検査可能。依存：T-001。
 - [x] T-003 bootstrapの最小S3/OIDC境界/予算メールを設計どおり構築。完了：S3 State作成・保護・backend移行、共有資源の読み取り確認、OIDC Provider/IAM Role/PolicyのApplyと実リソース検証、料金影響の確認。依存：T-002。試験：AT-14、AT-24。
 - [x] T-004 AWSなしのPR静的CIを作る。完了：fmt/validate/lint/scanと失敗時停止を確認。PR上の`Terraform Static Checks`は44秒で成功。Workflow定義とActionsログで、AWS認証・AWS CLI・remote backend・`terraform plan/apply/destroy`がないことを確認し、CloudTrailの追加確認は省略。不要な`.terraform`、tfplan、空のlocal stateを削除し、`MEMO.md`、`docs/`、state backupは保持。依存：T-002。試験：AT-09。
-- [ ] T-005 cleanup仕様・所有物台帳・費用試算を準備。完了：生成物も含む削除順、失敗時再開、bootstrap除外が説明できる。依存：T-001～T-003。試験：AT-13、AT-24の準備。
+- [x] T-005 cleanup仕様・所有物台帳・費用試算を準備。完了：生成物も含む削除順、失敗時再開、bootstrap除外、所有物、費用判断基準、受入条件を整理した。依存：T-001～T-003。試験：AT-13、AT-24の準備。
   - [x] T-005-01 現在のAWSリソースとTerraform管理対象を棚卸しする。完了：Terraform設定からS3 State、GitHub OIDC Provider、Plan/Apply IAM Role・Policy、session-runtime backendを確認。AWS読み取り確認でBootstrap stateのみ存在し、session-runtime stateは未作成、GitHub OIDC Providerは1つ、対象RoleはPlan/Applyの2つであることを確認。AWS変更操作は行っていない。
   - [x] T-005-02 cleanup仕様と削除順序を作成する。完了：`docs/14_teardown.md`に、ローカル生成物、session-runtime、Bootstrapの保持・削除境界、通常cleanupの順序、state保持判断、失敗時の再開手順を追記した。AWS変更操作は行っていない。
   - [x] T-005-03 所有物台帳を作成する。完了：個人用`docs/15_resource_ownership.md`に、各リソースの所有者、用途、保持条件、削除判断、確認方法、削除前チェック、更新ルールを記録した。AWS変更操作は行っていない。
   - [x] T-005-04 費用試算と残置・削除判断基準を作成する。完了：個人用`docs/08_cost_roadmap.md`に、1回1 USD・月10 USDの継続判断ライン、Bootstrapの残置方針、runtimeと月額課金リスクのある資源の削除判断、実請求再確認の条件を追記した。AWS変更操作は行っていない。
-  - [ ] T-005-05 受入条件と再開手順を確認する。完了：cleanup仕様、所有物台帳、費用試算が相互に矛盾せず、次回作業を安全に再開できる。
+  - [x] T-005-05 受入条件と再開手順を確認する。完了：`docs/08_cost_roadmap.md`、`docs/14_teardown.md`、`docs/15_resource_ownership.md`を照合し、Bootstrap保持、runtime削除、ローカル生成物整理、費用判断ライン、state有無に応じた再開手順に矛盾がないことを確認した。AWS変更操作は行っていない。
 
 M0出口：何を作り、いくら使い、どう片付けるかが先に分かる。
 
@@ -109,4 +109,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次の1手はT-005-05 受入条件と再開手順の確認。**
+**次の1手はM1のT-101 core profileの設計・実装準備。**
