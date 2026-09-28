@@ -1,8 +1,8 @@
 # Production Minecraft Platform — TODO v2.0
 
 ## 現在の状況
-現在：**T-004-01〜10、T-005-01〜05、T-006完了。費用基準は月10 USD、1回1 USDを目標、1回の見込みが2 USD以上なら新規作成を中止と承認済み。T-101-01〜02完了：Terraform構成にEC2を追加し、14 add / 0 change / 0 destroyの詳細Planを確認。EULAを確認し同意済み。session-runtimeの`apply`は未実施で、今回のPlanによるAWSリソース作成はない。`ExpiresAt`タグは自動停止・削除ではないため、実行時は手動の時間管理と撤去が必要。session-runtimeのstate objectがないことだけではAWS資源の不存在を証明できないため、撤去前にサービス別残置確認を行う。Bootstrapの完全終了は通常cleanupと分離し、S3の`prevent_destroy`とOIDC所有権を個別に扱う。**
-次回：T-101-03の事前確認（AWS identity、state、費用・作業時間、手動タイマー）から再開する。まだ`apply`しない。
+現在：**T-004-01〜10、T-005-01〜05、T-006完了。費用基準は月10 USD、1回1 USDを目標、1回の見込みが2 USD以上なら新規作成を中止と承認済み。T-101-01〜02、T-101-03-01〜02完了。Planは14 add / 0 change / 0 destroyで想定どおり。90分の費用見積もりは約0.21 USDで基準内。identityは想定どおり、session-runtime state objectは404（state objectがないことだけではAWS資源の不存在を証明できない）。T-101-03-03（実験時間・手動タイマー・撤去経路の準備）と03-04（Go/No-Go判断）は未完了。session-runtimeの`apply`は未実施。`ExpiresAt`タグは自動停止・削除ではないため、実行時は手動の時間管理と撤去が必要。撤去前にサービス別残置確認を行う。Bootstrapの完全終了は通常cleanupと分離し、S3の`prevent_destroy`とOIDC所有権を個別に扱う。**
+次回：T-101-03-03から再開し、実験時間・手動タイマー・撤去経路を準備する。完了後に03-04のGo/No-Go判断へ進む。まだ`apply`しない。
 
 ## 進め方
 
