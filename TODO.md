@@ -53,7 +53,7 @@ M0出口：何を作り、いくら使い、どう片付けるかが先に分か
   - [x] T-101-02 Planのリソース・セキュリティ差分をレビューする。完了：network 10件、IAM 3件、EC2 1件を確認。受信はTCP 25565の本人`/32`のみで、SSH/RCON、NAT Gateway、Elastic IP、Interface Endpoint等の想定外リソースなし。PlanのみでAWS変更なし。
   - [ ] T-101-03 apply前の実行条件を確認する。完了：AWS caller identity/regionとremote stateを照合し、見込み費用が1回1 USD目標・2 USD未満であること、作業時間と手動タイマー、撤去手順を確認して本人が開始を判断する。`ExpiresAt`タグを自動停止と誤認しない。まだapplyしない。
     - [x] T-101-03-01 AWSの実行先とsession-runtime stateの有無を読み取り専用で確認する。完了：identityは本人の想定と一致。state objectは404で未作成と確認した。これはstateの不存在を示すだけで、AWSリソース全体の不存在を証明しない。
-    - [ ] T-101-03-02 前回レビューしたPlanと費用見積りを照合する。完了：14 add / 0 change / 0 destroyの対象を維持し、1回1 USD目標・2 USD未満の見積りを確認する。
+    - [x] T-101-03-02 前回レビューしたPlanと費用見積りを照合する。完了：Planは14 add / 0 change / 0 destroyで想定どおり。課金対象はm7i.large、gp3 16 GiB、Public IPv4。NAT Gateway/EIP/Interface Endpoint/ALBなし。10分約$0.02、30分約$0.07、90分約$0.21の試算で、1回1 USD目標・2 USD未満の基準を満たす。
     - [ ] T-101-03-03 実験時間・手動タイマー・撤去経路を準備する。完了：作業開始/終了時刻、離席時の対応、Terraform destroyと残置照会の手順を言葉で説明する。
     - [ ] T-101-03-04 Go/No-Goを本人が判断する。完了：前3項目の出力・Plan・撤去方法を確認し、applyへ進むか保留するかを決める。判断だけでapplyしない。
   - [ ] T-101-04 runtimeをapplyし、EC2/ネットワーク/SSMを確認する。完了：本人がapplyを実行し、EC2 running、SSM online、SGの受信範囲、RunId等を証跡化する。SSHを使わない。
@@ -122,4 +122,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次の1手はT-101-03-02。前回レビューしたPlanと費用見積りを照合する。まだ`apply`しない。**
+**次の1手はT-101-03-03。実験時間・手動タイマー・撤去経路を準備する。まだ`apply`しない。**
