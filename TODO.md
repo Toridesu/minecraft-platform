@@ -7,7 +7,6 @@
 ## 進め方
 
 1回のAWS作業を「作成→確認→証跡→撤去」で閉じる。タスクをまたいでAWSを放置せず、必要なら次回再applyする。依存は学習・コードの準備順であり、前タスクの資源を常設する意味ではない。
-
 チェックは実測と証跡が揃ってから付ける。旧版のタスク番号/完了条件は本一覧で置き換える。非公開の設計資料にあるラボ一覧・受入試験・撤去手順も参照する。
 
 ### サブタスクの進め方
@@ -34,15 +33,7 @@
 - [x] T-002 当フォルダのGit管理単位とローカルツールを準備。完了：他projectを含めず、state/plan/secret除外、固定版で静的検査可能。依存：T-001。
 - [x] T-003 bootstrapの最小S3/OIDC境界/予算メールを設計どおり構築。完了：S3 State作成・保護・backend移行、共有資源の読み取り確認、OIDC Provider/IAM Role/PolicyのApplyと実リソース検証、料金影響の確認。依存：T-002。試験：AT-14、AT-24。
 - [x] T-004 AWSなしのPR静的CIを作る。完了：fmt/validate/lint/scanと失敗時停止を確認。PR上の`Terraform Static Checks`は44秒で成功。Workflow定義とActionsログで、AWS認証・AWS CLI・remote backend・`terraform plan/apply/destroy`がないことを確認し、CloudTrailの追加確認は省略。不要な`.terraform`、tfplan、空のlocal stateを削除し、`MEMO.md`、`docs/`、state backupは保持。依存：T-002。試験：AT-09。
-- [x] T-005 cleanup仕様・所有物台帳・費用試算を準備。完了：生成物も含む削除順、失敗時再開、bootstrap除外、所有物、費用判断基準、受入条件を整理した。依存：T-001～T-003。試験：AT-13、AT-24の準備。
-  - [x] T-005-01 現在のAWSリソースとTerraform管理対象を棚卸しする。完了：Terraform設定からS3 State、GitHub OIDC Provider、Plan/Apply IAM Role・Policy、session-runtime backendを確認。AWS読み取り確認ではBootstrap state objectのみ存在し、session-runtime state objectは見つからなかった。GitHub OIDC Providerは1つ、対象RoleはPlan/Applyの2つ。state外のAWS資源の不存在までは未証明。AWS変更操作は行っていない。
-  - [x] T-005-02 cleanup仕様と削除順序を作成する。完了：`docs/14_teardown.md`に、ローカル生成物、session-runtime、Bootstrapの保持・削除境界、通常cleanupの順序、state保持判断、失敗時の再開手順を追記した。AWS変更操作は行っていない。
-  - [x] T-005-03 所有物台帳を作成する。完了：個人用`docs/15_resource_ownership.md`に、各リソースの所有者、用途、保持条件、削除判断、確認方法、削除前チェック、更新ルールを記録した。AWS変更操作は行っていない。
-  - [x] T-005-04 費用試算と残置・削除判断基準を作成する。完了：個人用`docs/08_cost_roadmap.md`に、1回1 USD目標・月10 USD、1回の見込み2 USD以上なら新規作成中止、Bootstrapの残置方針、runtimeと月額課金リスクのある資源の削除判断、実請求再確認の条件を追記した。AWS変更操作は行っていない。
-  - [x] T-005-05 受入条件と再開手順を確認する。完了：`docs/08_cost_roadmap.md`、`docs/14_teardown.md`、`docs/15_resource_ownership.md`を照合し、Bootstrap保持、runtime削除、ローカル生成物整理、費用判断ライン、state有無に応じた再開手順に矛盾がないことを確認した。AWS変更操作は行っていない。
 - [x] T-006 非公開のM0理解確認クイズに回答する。完了：T-001〜T-005の費用・state・CI・残置・撤去・Gitを自分の言葉で説明し、安全上重要な判断を確認する。AWS資源は作らない。依存：T-005。T-101へ進む前に完了させる。
-  - [x] T-006-01 本人が8問に回答する。完了：資料を参照してもよいので、回答または分からない点をチャットで共有する。
-  - [x] T-006-02 回答の理由と誤解を確認する。完了：特に費用、state外資源、残置、Bootstrap完全終了を説明できる。必要なら再回答する。
 
 M0出口：何を作り、いくら使い、どう片付けるかが先に分かる。
 
@@ -53,16 +44,6 @@ T-101の順序：03-01〜03-04でapply前条件を確認済み。今回、ロー
 AWS上の実行順：T-101-04（runtime作成と確認）→ T-101-05（サーバー設定）→ T-101-06（接続試験と撤去）。接続試験・runtime destroy・サービス別残置確認は完了。Bootstrapとstate bucketは保持し、実費請求の反映だけ後日確認する。
 
 - [x] T-101 core profileのVPC/SG/EC2/SSM/systemdを作り、実験後に撤去する。完了：版固定・EULA確認・本人接続・非公開管理を行い、14 resourceをdestroy。stateは空で、EC2/EBS/Public IPv4/専用network/IAMの残置なし。Bootstrapは保持。実費の請求反映を後日確認する。依存：T-006。試験：AT-02、AT-03、AT-23。
-  - [x] T-101-01 Terraform構成にEC2ホストを追加する。完了：固定AMI、`m7i.large`、既存public subnet/SG/SSM Instance Profile、IMDSv2必須、暗号化gp3 root 16 GiBを構成し、fmt/validate/planを実行。Planは14 add / 0 change / 0 destroy。`apply`はしない。
-  - [x] T-101-02 Planのリソース・セキュリティ差分をレビューする。完了：network 10件、IAM 3件、EC2 1件を確認。受信はTCP 25565の本人`/32`のみで、SSH/RCON、NAT Gateway、Elastic IP、Interface Endpoint等の想定外リソースなし。PlanのみでAWS変更なし。
-  - [x] T-101-03 apply前の実行条件を確認する。完了：AWS caller identity/regionとremote state、費用、作業時間・タイマー、撤去手順を照合し、本人がGoを判断した。`ExpiresAt`タグを自動停止と誤認しない。判断だけでapplyはしない。
-    - [x] T-101-03-01 AWSの実行先とsession-runtime stateの有無を読み取り専用で確認する。完了：identityは本人の想定と一致。state objectは404で未作成と確認した。これはstateの不存在を示すだけで、AWSリソース全体の不存在を証明しない。
-    - [x] T-101-03-02 前回レビューしたPlanと費用見積りを照合する。完了：Planは14 add / 0 change / 0 destroyで想定どおり。課金対象はm7i.large、gp3 16 GiB、Public IPv4。NAT Gateway/EIP/Interface Endpoint/ALBなし。10分約$0.02、30分約$0.07、90分約$0.21の試算で、1回1 USD目標・2 USD未満の基準を満たす。
-    - [x] T-101-03-03 実験時間・手動タイマー・撤去経路を準備する。完了：当初2026-09-29 15:30〜17:00 JSTを予定し、撤去開始アラームを16:44に設定した。その後、本人が時間制約を解除し、試験後に撤去する方針へ変更。アカウント/region/state/RunId確認後にruntimeの削除対象を照合し、Bootstrapを保持してEC2/EBS/Public IPv4/networkを残置照会する手順、失敗時のID・state記録と再開方法を説明した。
-    - [x] T-101-03-04 Go/No-Goを本人が判断する。完了：本人が前3項目の結果を確認してGoを選択し、後続のT-101-04で計画どおりapplyした。
-  - [x] T-101-04 runtimeをapplyし、EC2/ネットワーク/SSMを確認する。完了：実行先・backend/state・入力値・費用を確認し、Plan 14 add / 0 change / 0 destroyをレビュー後、本人がapply。apply成功（14 added / 0 changed / 0 destroyed）。EC2 1台がm7i.large/running、IMDSv2 required、status checks OK、SSM Onlineを確認。受信はTCP 25565の本人`/32`のみでSSHなし。RunId/ExpiresAt一致を確認。その後T-101-06で14 resourceをdestroy。
-  - [x] T-101-05 Vanilla Javaサーバーを非root・systemdで構成する。完了：Ubuntu 24.04 x86_64上でMicrosoft OpenJDK 25.0.4.1のSHA-256、Minecraft Java 26.1 server.jarの公式メタデータSHA-1を検証。EULA同意を反映し、専用の非root`minecraft`ユーザーでsystemd起動を確認。`SuccessExitStatus=143`を設定し、停止後`inactive (dead)`・`Deactivated successfully`を確認。Minecraft停止時の明示的なチャンク保存ログは証跡上確認できず。接続・切断はT-101-06で確認。
-  - [x] T-101-06 本人接続を試験し、runtimeを撤去する。完了：Java Edition 26.1クライアントから接続成功。destroy前にaccount/region/state/RunIdと14 resourceのdestroy planを確認し、本人がTerraform destroy（14 destroyed）。Terraform stateは空。EC2/EBS/Public IPv4/VPC/subnet/IGW/route table/SG/S3 endpoint/Minecraft専用IAMに該当なし。Bootstrap state bucket/objectとBootstrap state一覧は保持。期限タグが自動停止ではないことも確認。実費はAWS Billing/Cost Explorerへの反映後に追記する。
 - [ ] T-102 独立data EBS、mount検査、EC2交換を実装。完了：同Worldで再接続し、誤mount時は初期化しない。依存：T-101。試験：AT-04。
 - [ ] T-103 session-dataのS3と整合backup/restoreを実装。完了：runtimeを壊しても新EBSに戻せる。依存：T-102。試験：AT-06、AT-07。
 - [ ] T-104 最小Agent/Logs/通知を実装。完了：安全な異常から原因を調べ、通知後はalarm/logも撤去。依存：T-101。試験：AT-05。
