@@ -1,8 +1,8 @@
 # Production Minecraft Platform — TODO v2.0
 
 ## 現在の状況
-現在：**T-004-01〜10、T-005-01〜05、T-006完了。費用基準は月10 USD、1回1 USDを目標、1回の見込みが2 USD以上なら新規作成を中止と承認済み。T-101-01〜02、T-101-03-01〜03完了。Planは14 add / 0 change / 0 destroyで想定どおり。90分の費用見積もりは約0.21 USDで基準内。identityは想定どおり、session-runtime state objectは404（state objectがないことだけではAWS資源の不存在を証明できない）。実験枠は2026-09-29 15:30〜17:00 JST、apply直前にタイマーを開始し、75分で撤去へ移る計画。T-101-03-04のGo/No-Go判断は未完了。session-runtimeの`apply`は未実施。`ExpiresAt`タグは自動停止・削除ではないため、実行時は手動の時間管理と撤去が必要。撤去前にサービス別残置確認を行う。Bootstrapの完全終了は通常cleanupと分離し、S3の`prevent_destroy`とOIDC所有権を個別に扱う。**
-次回：T-101-03-04で、事前確認・Plan・費用・時間枠・撤去方法を照合し、Go/No-Goを判断する。Goの場合も、その判断だけでは`apply`しない。
+現在：**T-004-01〜10、T-005-01〜05、T-006完了。費用基準は月10 USD、1回1 USDを目標、1回の見込みが2 USD以上なら新規作成を中止と承認済み。T-101-01〜02、T-101-03-01〜04完了。Planは14 add / 0 change / 0 destroyで想定どおり。90分の費用見積もりは約0.21 USDで基準内。identityは想定どおり、session-runtime state objectは404（state objectがないことだけではAWS資源の不存在を証明できない）。実験枠は2026-09-29 15:30〜17:00 JST、apply直前にタイマーを開始し、75分で撤去へ移る計画。本人はT-101-03-04でGoを判断した。session-runtimeの`apply`は未実施。T-101-04では実行直前に最新Planと費用を再確認する。`ExpiresAt`タグは自動停止・削除ではないため、実行時は手動の時間管理と撤去が必要。撤去前にサービス別残置確認を行う。Bootstrapの完全終了は通常cleanupと分離し、S3の`prevent_destroy`とOIDC所有権を個別に扱う。**
+次回：T-101-04。実行先・backend/state・最新Plan・費用を確認し、内容をレビューしてからruntimeをapplyする。
 
 ## 進め方
 
@@ -55,12 +55,12 @@ AWS上の実行順：T-101-04（runtime作成と確認）→ T-101-05（サー�
 - [ ] T-101 core profileのVPC/SG/EC2/SSM/systemdを作る。完了：版固定・EULA確認・本人接続・非公開管理。最後に撤去。依存：T-006。試験：AT-02、AT-03、AT-23。
   - [x] T-101-01 Terraform構成にEC2ホストを追加する。完了：固定AMI、`m7i.large`、既存public subnet/SG/SSM Instance Profile、IMDSv2必須、暗号化gp3 root 16 GiBを構成し、fmt/validate/planを実行。Planは14 add / 0 change / 0 destroy。`apply`はしない。
   - [x] T-101-02 Planのリソース・セキュリティ差分をレビューする。完了：network 10件、IAM 3件、EC2 1件を確認。受信はTCP 25565の本人`/32`のみで、SSH/RCON、NAT Gateway、Elastic IP、Interface Endpoint等の想定外リソースなし。PlanのみでAWS変更なし。
-  - [ ] T-101-03 apply前の実行条件を確認する。完了：AWS caller identity/regionとremote stateを照合し、見込み費用が1回1 USD目標・2 USD未満であること、作業時間と手動タイマー、撤去手順を確認して本人が開始を判断する。`ExpiresAt`タグを自動停止と誤認しない。まだapplyしない。
+  - [x] T-101-03 apply前の実行条件を確認する。完了：AWS caller identity/regionとremote state、費用、作業時間・タイマー、撤去手順を照合し、本人がGoを判断した。`ExpiresAt`タグを自動停止と誤認しない。判断だけでapplyはしない。
     - [x] T-101-03-01 AWSの実行先とsession-runtime stateの有無を読み取り専用で確認する。完了：identityは本人の想定と一致。state objectは404で未作成と確認した。これはstateの不存在を示すだけで、AWSリソース全体の不存在を証明しない。
     - [x] T-101-03-02 前回レビューしたPlanと費用見積りを照合する。完了：Planは14 add / 0 change / 0 destroyで想定どおり。課金対象はm7i.large、gp3 16 GiB、Public IPv4。NAT Gateway/EIP/Interface Endpoint/ALBなし。10分約$0.02、30分約$0.07、90分約$0.21の試算で、1回1 USD目標・2 USD未満の基準を満たす。
     - [x] T-101-03-03 実験時間・手動タイマー・撤去経路を準備する。完了：本人が2026-09-29 15:30〜17:00 JSTを予定し、apply直前にタイマー開始、75分で試験を切り上げて撤去、90分以内の終了を計画。アカウント/region/state/RunId確認後にruntimeの削除対象を照合し、Bootstrapを保持してEC2/EBS/Public IPv4/networkを残置照会する手順、失敗時のID・state記録と再開方法を説明した。
-    - [ ] T-101-03-04 Go/No-Goを本人が判断する。完了：前3項目の出力・Plan・撤去方法を確認し、applyへ進むか保留するかを決める。判断だけでapplyしない。
-  - [ ] T-101-04 runtimeをapplyし、EC2/ネットワーク/SSMを確認する。完了：本人がapplyを実行し、EC2 running、SSM online、SGの受信範囲、RunId等を証跡化する。SSHを使わない。
+    - [x] T-101-03-04 Go/No-Goを本人が判断する。完了：本人が前3項目の結果を確認してGoを選択した。これはT-101-04へ進む判断であり、apply自体は未実施。
+  - [ ] T-101-04 runtimeをapplyし、EC2/ネットワーク/SSMを確認する。完了：apply直前にcaller identity、region、固定backend/state、入力値、サービス別残置、最新Planと費用を再確認し、対象と費用が承認範囲内と確認してから本人がapplyする。EC2 running、SSM online、SG受信範囲、RunId等を証跡化する。SSHを使わない。差分変更・残置・見積り超過時は適用せず停止する。
   - [ ] T-101-05 Vanilla Javaサーバーを非root・systemdで構成する。完了：公式配布元・版固定、EULA同意を反映、起動/停止/ログを確認する。
   - [ ] T-101-06 本人接続を試験し、runtimeを撤去する。完了：許可元から接続・保存を確認後、destroyとサービス別残置確認を行い、AWS存在時間・費用確認予定・証跡を記録する。
 - [ ] T-102 独立data EBS、mount検査、EC2交換を実装。完了：同Worldで再接続し、誤mount時は初期化しない。依存：T-101。試験：AT-04。
@@ -126,4 +126,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次の1手はT-101-03-04。事前確認・Plan・費用・撤去方法を見直し、Go/No-Goを判断する。判断だけで`apply`しない。**
+**次の1手はT-101-04。実行先・state・最新Planを確認して差分をレビューする。Plan確認後に本人がapplyする。**
