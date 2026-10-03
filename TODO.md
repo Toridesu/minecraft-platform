@@ -2,9 +2,10 @@
 
 ## 現在の状況
 現在：**T-004-01〜10、T-005-01〜05、T-006、T-101-01〜06完了。費用基準は月10 USD、1回1 USDを目標、1回の見込みが2 USD以上なら新規作成を中止と承認済み。2026-09-29のsession-runtime applyは14 add / 0 change / 0 destroy、destroyは14 destroyed。Minecraft Java 26.1をMicrosoft OpenJDK 25.0.4.1で起動し、配布物のSHA検証、EULA同意、非rootユーザー・systemd起動停止を確認。本人クライアントから接続し、ログイン・切断を確認。SIGTERM由来の終了コード143はsystemdで成功扱いとなり、サービスは`inactive (dead)`。session-runtime stateは空。EC2/EBS/Public IPv4、VPC/Endpoint等ネットワーク、Minecraft専用IAMはサービス別照会で該当なし。BootstrapのS3 bucketとstate objectは存在し、Bootstrap stateの管理資源一覧も確認。`ExpiresAt`タグの日時を過ぎてもEC2は自動停止しなかったため、タグは自動cleanupではないと実証。90分の約$0.21は事前見積りで実費ではない。実際の請求額はAWS Billing/Cost Explorer反映後に確認する。Bootstrapは通常保持し、完全終了は別手順とする。**
-2026-10-03：T-102-01完了。独立した暗号化gp3 16 GiBのdata EBSとattachmentを追加し、既存のAWS管理キーを参照。本人がfmt/validate、実行先・default workspace・空のruntime stateを確認し、Plan 16 add / 0 change / 0 destroyと各設定に問題なしと報告。applyは未実施。EC2交換時のデータ維持・誤mount拒否の実証はT-102-02〜03で行う。
+2026-10-03：T-102-01完了。独立した暗号化gp3 16 GiBのdata EBSとattachmentを追加し、既存のAWS管理キーを参照。本人がfmt/validate、実行先・default workspace・空のruntime stateを確認し、Plan 16 add / 0 change / 0 destroyを確認後、16 resourceのapplyを完了。
 T-102-02完了：起動前検査、systemd service、mount・識別情報のテンプレートを作成。本人がLinuxコンテナで模擬応答によるテストを実行し、11 passed / 0 failedを確認。実EBSのmountとsystemdによる起動拒否は未検証で、T-102-03に残す。
-次回：T-102-03 実EBS・systemdでの異常系、EC2交換後のWorld維持、runtime撤去を確認。T-101の実費は請求反映後に確認して追記する。
+T-102-03進行中：本人が初回data EBSの識別・初期化、mount、権限、固定版JDK/JAR、起動前検査・systemd設定を配置。本人の明示依頼により、以降のAWS操作はCodexが実施。実systemdでUUID不一致・volume ID不一致・mount不可による起動拒否、Java未起動・空World未生成を確認。正常起動・停止後のWorld全25ファイルのSHA-256を記録し、unmount後にEC2とattachmentのみ交換（2 add / 0 change / 2 destroy）。同じdata EBS・UUIDを再利用し、formatせず全25ファイルの一致と既存Worldの正常起動を確認。本人のゲーム接続と撤去は未完了。現在runtimeは稼働・課金中。証跡はGit対象外の`evidence/`に保存。
+次の操作：交換後EC2へ本人が接続・切断したら、正常停止、runtime destroy、サービス別残置確認を行う。完了までT-102は未チェック。T-101/T-102の実費は請求反映後に確認して追記する。
 
 ## 進め方
 
@@ -51,6 +52,7 @@ AWS上の実行順：T-101-04（runtime作成と確認）→ T-101-05（サー�
   - [x] T-102-01 Terraformに暗号化data EBSとEC2 attachmentを追加し、Planを確認。完了：独立resourceとしてgp3 16 GiB・暗号化・AWS管理キー・subnetと同じAZ・EC2 attachmentを定義。本人がfmt/validate成功、実行先・default workspace・空のruntime state、Plan 16 add / 0 change / 0 destroyと各設定を確認。apply未実施。EC2交換時の保持とruntime全撤去時の削除の実証はT-102-03で行う。
   - [x] T-102-02 UUID/mountpoint検査と起動条件を実装。完了：volume ID・UUID・ext4・mount先の検査、systemdの起動前検査とmount依存、設定テンプレートを用意。起動処理にformatは含めず、新規volumeの初期化は別途明示的に行う。本人のLinuxコンテナ試験で正常・mount欠落・UUID/volume不一致など11ケースが成功（11 passed / 0 failed）。実EBSとsystemdを組み合わせた検証はT-102-03で行う。
   - [ ] T-102-03 1回のruntime試験でAT-04を実施。完了：実EBSとsystemdでmount欠落・誤volume/UUIDによる起動拒否と空World未生成を確認。正常停止・切離し後、保持したdata EBSを同AZの新EC2へ再接続して同じWorldを確認し、runtimeをdestroyして残置なし。
+    進捗（2026-10-03）：異常系3件、World全25ファイルの交換前後一致、EC2交換後の既存World起動を確認済み。本人の実接続・切断、runtime撤去・残置確認が残る。プレイヤーの建築物・所持品の保存試験は未実施で、ファイル一致の確認と混同しない。
 - [ ] T-103 session-dataのS3と整合backup/restoreを実装。完了：runtimeを壊しても新EBSに戻せる。依存：T-102。試験：AT-06、AT-07。
 - [ ] T-104 最小Agent/Logs/通知を実装。完了：安全な異常から原因を調べ、通知後はalarm/logも撤去。依存：T-101。試験：AT-05。
 - [ ] T-105 coreの全撤去と証跡回収を実証。完了：EC2/EBS/S3 versions/Logs等の残置なし、費用確認を記録。依存：T-103、T-104。試験：AT-13、AT-22。
@@ -113,4 +115,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次の1手はT-102-03。T-102-01のPlan確認とT-102-02の実装・ローカル模擬テストは完了し、applyは未実施。T-101のAWS runtimeは撤去済み。後日、AWS Billing/Cost Explorerに利用料が反映されたら実費を記録する。**
+**次の1手はT-102-03の本人接続確認。その後Codexが正常停止・runtime撤去・残置確認を行う。交換後runtimeは現在稼働・課金中であり、撤去完了扱いにしない。後日、AWS Billing/Cost Explorerに利用料が反映されたら実費を記録する。**
