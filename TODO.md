@@ -5,7 +5,7 @@
 2026-10-03：T-102-01完了。独立した暗号化gp3 16 GiBのdata EBSとattachmentを追加し、既存のAWS管理キーを参照。本人がfmt/validate、実行先・default workspace・空のruntime stateを確認し、Plan 16 add / 0 change / 0 destroyを確認後、16 resourceのapplyを完了。
 T-102完了（2026-10-03）：Linuxコンテナの模擬試験11件に加え、実systemdでUUID不一致・volume ID不一致・mount不可による起動拒否、Java未起動・空World未生成を確認。正常起動・停止後のWorld全25ファイルのSHA-256を記録し、unmount後にEC2とattachmentのみ交換（2 add / 0 change / 2 destroy）。同じdata EBS・UUIDをformatせず再利用し、起動前の全25ファイル一致と既存World読み込み、交換後EC2への本人接続・切断を確認。本人の明示依頼により後半のAWS操作・撤去はCodexが実施。
 撤去完了：保存済みdestroy Plan（0 add / 0 change / 16 destroy）を適用し、16件を削除。Minecraft停止は`inactive`・`Result=success`・MainPID=0。runtime stateは空。交換前後root EBS・data EBS、稼働中等の対象EC2、Public IPv4の割当先ENI、VPC/Endpoint/Subnet/Route Table/SG/IGW、専用IAMの残置なしをサービス別に確認。BootstrapのS3 bucketとstate objectは保持。証跡はGit対象外の`evidence/`に保存。プレイヤーの建築物・所持品の交換前後比較は未実施であり、Worldファイル一致と区別する。
-T-103-01進行中：session-data雛形/backendのinit・fmtチェック・validate成功、default workspaceを確認。新backend keyは`pmp/lab/session-data/terraform.tfstate`でruntimeとは独立。本人がbackup S3の公開遮断・所有権・SSE-S3を記述し、Versioning/Lifecycleの意味を理解後、追加実装をCodexへ依頼。CodexがVersioning、backups/配下の現行版7日・旧版化後7日、削除マーカー整理、未完了multipart uploadの1日後中止を追加し、fmt/validate成功。Lifecycleは即時・7日以内の完全削除保証ではなく、演習終了時は明示的に全versionを削除する。IAM、HTTPS強制bucket policy、Plan/費用確認は未完了。AWS資源はまだ作成していない。実費は請求反映後に確認。BootstrapのS3保存料・リクエスト料は残るため完全な無料とはしない。
+T-103-01確認待ち：本人がHTTPS強制bucket policyとEC2の限定IAM Policyを記述。両rootのfmt/validate・TFLint、新session-dataのTrivy検査、公開対象ソースのsecret検査に成功。CIにsession-dataのfmt/validate/TFLintを追加。確認専用入力でsession-data Planは7 add、backup ARN指定runtimeは17 add、未指定runtimeは16 add（すべて0 change/0 destroy）。仮ARN・確認専用RunIdを使ったPlanはapply禁止で、実演習前に実bucket ARN・新RunId/期限で再Planする。全infraスキャンは既存networkのAWS-0104（HTTPS公開宛先egress）とAWS-0164（Public IP）を検出し、理由付き限定例外にするか本人へ確認中。追加S3の費用は容量/全version/requests等の従量課金、固定月額の専用KMS等は追加しない。実演習全体の見積りは03の作成直前に再確認する。Planの学習確認とnetwork指摘の対応方針が残るため未完了。AWS資源は作成していない。証跡はGit外のevidence/。既存BootstrapのS3保存料・リクエスト料は残る。
 
 ## 進め方
 
@@ -123,4 +123,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次の1手はT-103-01のIAM PolicyとHTTPS強制bucket policyの説明・実装。S3保護/保持設定のfmt/validateまで成功。Plan/費用確認は未完了で、AWS資源はまだ作成していない。後日、請求に利用料が反映されたら実費を記録する。**
+**次の1手はT-103-01のPlan理解確認と既存network指摘への対応判断。コード・Planの検証結果は記録済み。確認できたら01を完了として今日は終了する。applyは行わず、T-103-02は次回。**

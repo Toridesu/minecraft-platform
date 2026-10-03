@@ -56,6 +56,7 @@ jobs:
           set -euo pipefail
           terraform fmt -check -diff infra/bootstrap
           terraform fmt -check -diff infra/environments/lab/session-runtime
+          terraform fmt -check -diff infra/environments/lab/session-data
 
       - name: Initialize providers and validate Terraform
         run: |
@@ -91,6 +92,7 @@ jobs:
 
           validate_root infra/bootstrap
           validate_root infra/environments/lab/session-runtime
+          validate_root infra/environments/lab/session-data
 
       - name: Initialize TFLint plugins
         run: |
@@ -105,6 +107,9 @@ jobs:
             --format=compact
           tflint --config "${GITHUB_WORKSPACE}/.tflint.hcl" \
             --chdir=infra/environments/lab/session-runtime \
+            --format=compact
+          tflint --config "${GITHUB_WORKSPACE}/.tflint.hcl" \
+            --chdir=infra/environments/lab/session-data \
             --format=compact
 
       - name: Scan Terraform configuration with Trivy

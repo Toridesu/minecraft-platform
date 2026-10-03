@@ -55,3 +55,16 @@ variable "ubuntu_ami_id" {
   type        = string
   default     = "ami-0722c84b91d123e55"
 }
+
+variable "backup_bucket_arn" {
+  description = "Exact session-data backup bucket ARN. Empty disables backup permissions."
+  type        = string
+  default     = ""
+
+  validation {
+    condition = var.backup_bucket_arn == "" || can(
+      regex("^arn:aws:s3:::[a-z0-9][a-z0-9.-]+$", var.backup_bucket_arn)
+    )
+    error_message = "backup_bucket_arn must be empty or an exact S3 bucket ARN without an object path or wildcard."
+  }
+}
