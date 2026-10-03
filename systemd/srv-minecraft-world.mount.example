@@ -1,0 +1,8 @@
+[Unit]
+Description=Minecraft data volume
+
+[Mount]
+What=/dev/disk/by-uuid/REPLACE_WITH_FILESYSTEM_UUID
+Where=/srv/minecraft/world
+Type=ext4
+Options=defaults,nodev,nosuid

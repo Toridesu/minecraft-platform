@@ -1,0 +1,30 @@
+[Unit]
+Description=Minecraft Java Edition 26.1
+RequiresMountsFor=/srv/minecraft/world
+BindsTo=srv-minecraft-world.mount
+After=srv-minecraft-world.mount
+
+[Service]
+Type=exec
+User=minecraft
+Group=minecraft
+WorkingDirectory=/srv/minecraft/world
+EnvironmentFile=/etc/minecraft/storage.conf
+
+ExecStartPre=+/usr/bin/bash /usr/local/libexec/check-minecraft-storage.sh ${EXPECTED_VOLUME_ID} ${EXPECTED_UUID}
+ExecStart=/opt/microsoft-jdk-25.0.4.1/bin/java -Xms1G -Xmx3G -jar /srv/minecraft/server/server.jar nogui
+
+KillSignal=SIGTERM
+SuccessExitStatus=143
+TimeoutStopSec=120
+Restart=no
+UMask=0027
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/srv/minecraft/world
+
+[Install]
+WantedBy=multi-user.target
