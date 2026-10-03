@@ -2,7 +2,8 @@
 
 ## 現在の状況
 現在：**T-004-01〜10、T-005-01〜05、T-006、T-101-01〜06完了。費用基準は月10 USD、1回1 USDを目標、1回の見込みが2 USD以上なら新規作成を中止と承認済み。2026-09-29のsession-runtime applyは14 add / 0 change / 0 destroy、destroyは14 destroyed。Minecraft Java 26.1をMicrosoft OpenJDK 25.0.4.1で起動し、配布物のSHA検証、EULA同意、非rootユーザー・systemd起動停止を確認。本人クライアントから接続し、ログイン・切断を確認。SIGTERM由来の終了コード143はsystemdで成功扱いとなり、サービスは`inactive (dead)`。session-runtime stateは空。EC2/EBS/Public IPv4、VPC/Endpoint等ネットワーク、Minecraft専用IAMはサービス別照会で該当なし。BootstrapのS3 bucketとstate objectは存在し、Bootstrap stateの管理資源一覧も確認。`ExpiresAt`タグの日時を過ぎてもEC2は自動停止しなかったため、タグは自動cleanupではないと実証。90分の約$0.21は事前見積りで実費ではない。実際の請求額はAWS Billing/Cost Explorer反映後に確認する。Bootstrapは通常保持し、完全終了は別手順とする。**
-次回：T-102 独立data EBS、mount検査、EC2交換を実装。今回の実費は請求反映後に確認して追記する。
+2026-10-03：T-102-01完了。独立した暗号化gp3 16 GiBのdata EBSとattachmentを追加し、既存のAWS管理キーを参照。本人がfmt/validate、実行先・default workspace・空のruntime stateを確認し、Plan 16 add / 0 change / 0 destroyと各設定に問題なしと報告。applyは未実施。EC2交換時のデータ維持・誤mount拒否の実証はT-102-02〜03で行う。
+次回：T-102-02 UUID/mountpoint検査とMinecraftの起動条件を実装。T-101の実費は請求反映後に確認して追記する。
 
 ## 進め方
 
@@ -46,7 +47,7 @@ AWS上の実行順：T-101-04（runtime作成と確認）→ T-101-05（サー�
 
 - [x] T-101 core profileのVPC/SG/EC2/SSM/systemdを作り、実験後に撤去する。完了：版固定・EULA確認・本人接続・非公開管理を行い、14 resourceをdestroy。stateは空で、EC2/EBS/Public IPv4/専用network/IAMの残置なし。Bootstrapは保持。実費の請求反映を後日確認する。依存：T-006。試験：AT-02、AT-03、AT-23。
 - [ ] T-102 独立data EBS、mount検査、EC2交換を実装。完了：同Worldで再接続し、誤mount時は初期化しない。依存：T-101。試験：AT-04。
-  - [ ] T-102-01 Terraformに暗号化data EBSとEC2 attachmentを追加し、Planを確認。完了：data EBSはEC2交換時に保持し、runtime全撤去時に削除する設計で、差分に想定外資源がない。
+  - [x] T-102-01 Terraformに暗号化data EBSとEC2 attachmentを追加し、Planを確認。完了：独立resourceとしてgp3 16 GiB・暗号化・AWS管理キー・subnetと同じAZ・EC2 attachmentを定義。本人がfmt/validate成功、実行先・default workspace・空のruntime state、Plan 16 add / 0 change / 0 destroyと各設定を確認。apply未実施。EC2交換時の保持とruntime全撤去時の削除の実証はT-102-03で行う。
   - [ ] T-102-02 UUID/mountpointを検査し、期待するdata EBSがない・違う場合はMinecraftを起動せず、誤formatやroot上の空World生成を防ぐ。完了：初期化は明示的な新規volume準備時だけ行い、失敗条件を確認。
   - [ ] T-102-03 1回のruntime試験でAT-04を実施。完了：data EBSを付けたまま同AZでEC2を交換して同じWorldを確認し、誤mount拒否も検証後、runtimeをdestroyして残置なし。
 - [ ] T-103 session-dataのS3と整合backup/restoreを実装。完了：runtimeを壊しても新EBSに戻せる。依存：T-102。試験：AT-06、AT-07。
@@ -111,4 +112,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次の1手はT-102。T-101のAWS runtimeは撤去済み。後日、AWS Billing/Cost Explorerに利用料が反映されたら実費を記録する。**
+**次の1手はT-102-02。T-102-01はPlan確認まで完了し、applyは未実施。T-101のAWS runtimeは撤去済み。後日、AWS Billing/Cost Explorerに利用料が反映されたら実費を記録する。**
