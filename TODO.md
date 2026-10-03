@@ -5,7 +5,7 @@
 2026-10-03：T-102-01完了。独立した暗号化gp3 16 GiBのdata EBSとattachmentを追加し、既存のAWS管理キーを参照。本人がfmt/validate、実行先・default workspace・空のruntime stateを確認し、Plan 16 add / 0 change / 0 destroyを確認後、16 resourceのapplyを完了。
 T-102完了（2026-10-03）：Linuxコンテナの模擬試験11件に加え、実systemdでUUID不一致・volume ID不一致・mount不可による起動拒否、Java未起動・空World未生成を確認。正常起動・停止後のWorld全25ファイルのSHA-256を記録し、unmount後にEC2とattachmentのみ交換（2 add / 0 change / 2 destroy）。同じdata EBS・UUIDをformatせず再利用し、起動前の全25ファイル一致と既存World読み込み、交換後EC2への本人接続・切断を確認。本人の明示依頼により後半のAWS操作・撤去はCodexが実施。
 撤去完了：保存済みdestroy Plan（0 add / 0 change / 16 destroy）を適用し、16件を削除。Minecraft停止は`inactive`・`Result=success`・MainPID=0。runtime stateは空。交換前後root EBS・data EBS、稼働中等の対象EC2、Public IPv4の割当先ENI、VPC/Endpoint/Subnet/Route Table/SG/IGW、専用IAMの残置なしをサービス別に確認。BootstrapのS3 bucketとstate objectは保持。証跡はGit対象外の`evidence/`に保存。プレイヤーの建築物・所持品の交換前後比較は未実施であり、Worldファイル一致と区別する。
-次回：T-103-01（backup S3・権限・state分離の準備）。T-103は準備、処理とローカル試験、AWS復旧試験と撤去の3サブタスクに分割済み。まだT-103の実装・AWS作成は行っていない。T-101/T-102の実費は請求反映後に確認して追記する。runtimeの継続課金対象は撤去済みだが、BootstrapのS3保存料・リクエスト料は残るため完全な無料とはしない。
+T-103-01進行中：Codexがsession-dataの雛形/backendを準備し、既存と同じTerraform/provider版でinit・fmtチェック・validate成功、default workspaceを確認。新backendのkeyは`pmp/lab/session-data/terraform.tfstate`でruntimeとは独立し、state未作成はapply前の想定どおり。次は本人がS3の保護/保持設定とIAM Policyを学んで記述する。AWS資源はまだ作成していない。T-101/T-102の実費は請求反映後に確認して追記する。runtimeの継続課金対象は撤去済みだが、BootstrapのS3保存料・リクエスト料は残るため完全な無料とはしない。
 
 ## 進め方
 
@@ -123,4 +123,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次の1手はT-103-01。T-103は3サブタスクに分割済みで、実装・AWS作成はまだ行っていない。T-102は本人接続・runtime撤去・残置確認まで完了。後日、AWS Billing/Cost Explorerに利用料が反映されたら実費を記録する。**
+**次の1手はT-103-01の本人によるbackup S3保護設定。session-data雛形の初期化・静的検証まで完了し、AWS資源はまだ作成していない。T-102は本人接続・runtime撤去・残置確認まで完了。後日、AWS Billing/Cost Explorerに利用料が反映されたら実費を記録する。**
