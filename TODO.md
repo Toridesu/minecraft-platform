@@ -5,7 +5,9 @@
 2026-10-03：T-102-01完了。独立した暗号化gp3 16 GiBのdata EBSとattachmentを追加し、既存のAWS管理キーを参照。本人がfmt/validate、実行先・default workspace・空のruntime stateを確認し、Plan 16 add / 0 change / 0 destroyを確認後、16 resourceのapplyを完了。
 T-102完了（2026-10-03）：Linuxコンテナの模擬試験11件に加え、実systemdでUUID不一致・volume ID不一致・mount不可による起動拒否、Java未起動・空World未生成を確認。正常起動・停止後のWorld全25ファイルのSHA-256を記録し、unmount後にEC2とattachmentのみ交換（2 add / 0 change / 2 destroy）。同じdata EBS・UUIDをformatせず再利用し、起動前の全25ファイル一致と既存World読み込み、交換後EC2への本人接続・切断を確認。本人の明示依頼により後半のAWS操作・撤去はCodexが実施。
 撤去完了：保存済みdestroy Plan（0 add / 0 change / 16 destroy）を適用し、16件を削除。Minecraft停止は`inactive`・`Result=success`・MainPID=0。runtime stateは空。交換前後root EBS・data EBS、稼働中等の対象EC2、Public IPv4の割当先ENI、VPC/Endpoint/Subnet/Route Table/SG/IGW、専用IAMの残置なしをサービス別に確認。BootstrapのS3 bucketとstate objectは保持。証跡はGit対象外の`evidence/`に保存。プレイヤーの建築物・所持品の交換前後比較は未実施であり、Worldファイル一致と区別する。
-T-103-01確認待ち：本人がHTTPS強制bucket policyとEC2の限定IAM Policyを記述。両rootのfmt/validate・TFLint、新session-dataのTrivy検査、公開対象ソースのsecret検査に成功。CIにsession-dataのfmt/validate/TFLintを追加。確認専用入力でsession-data Planは7 add、backup ARN指定runtimeは17 add、未指定runtimeは16 add（すべて0 change/0 destroy）。仮ARN・確認専用RunIdを使ったPlanはapply禁止で、実演習前に実bucket ARN・新RunId/期限で再Planする。全infraスキャンは既存networkのAWS-0104（HTTPS公開宛先egress）とAWS-0164（Public IP）を検出し、理由付き限定例外にするか本人へ確認中。追加S3の費用は容量/全version/requests等の従量課金、固定月額の専用KMS等は追加しない。実演習全体の見積りは03の作成直前に再確認する。Planの学習確認とnetwork指摘の対応方針が残るため未完了。AWS資源は作成していない。証跡はGit外のevidence/。既存BootstrapのS3保存料・リクエスト料は残る。
+T-103-01完了（2026-10-03）：本人がS3保護設定、HTTPS強制bucket policy、EC2の限定IAM Policyを記述し、Versioning/LifecycleとPlanの管理境界・権限範囲・仮ARNを理解したことを確認。両rootのfmt/validate・TFLint、公開対象ソースのsecret検査、全infraのTrivy検査に成功。既存networkのAWS-0104/0164は本人承認により該当2箇所のみ理由・見直し期限（2026-12-31、常設化/重要データ導入時は前倒し）付き例外とし、AWS通信設定は変更しない。CIにsession-dataを追加。確認用Planはsession-data 7 add、backup ARN指定runtime 17 add、未指定16 add（すべて0 change/0 destroy）。これらの仮ARN・確認専用入力のPlanはapply禁止で、03前に実bucket ARN・新RunId/期限で再Planする。S3追加費用は容量/全version/requests等の従量課金、専用KMS等の固定月額資源は追加しない。03全体の見積りは作成直前に再確認。applyは行わずAWS資源は作成していない。証跡はGit外のevidence/。BootstrapのS3保存料・リクエスト料は残る。
+
+GitHub静的CIも成功：`Terraform Static Checks` run `37117089186`（Git SHA `c1bf370`）。Bootstrap/runtime/session-dataのfmt/validate/TFLint、infra設定scan、secret scanを検証。AWS認証・Plan/apply/destroyは行わないWorkflowで確認した。
 
 ## 進め方
 
@@ -56,7 +58,7 @@ AWS上の実行順：T-101-04（runtime作成と確認）→ T-101-05（サー�
 - [x] T-101 core profileのVPC/SG/EC2/SSM/systemdを作り、実験後に撤去する。完了：版固定・EULA確認・本人接続・非公開管理を行い、14 resourceをdestroy。stateは空で、EC2/EBS/Public IPv4/専用network/IAMの残置なし。Bootstrapは保持。実費の請求反映を後日確認する。依存：T-006。試験：AT-02、AT-03、AT-23。
 - [x] T-102 独立data EBS、mount検査、EC2交換を実装。完了：実systemdの異常系3件で起動拒否・空World未生成を確認。同じdata EBSをformatせず新EC2へ再接続し、World全25ファイルの一致、既存World起動と本人接続・切断を確認。runtime16件を撤去し、state空・サービス別残置なし、Bootstrap保持を確認。全サブタスク完了のため子行を削除。依存：T-101。試験：AT-04。
 - [ ] T-103 session-dataのS3と整合backup/restoreを実装。完了：runtimeを壊しても新EBSに戻せる。依存：T-102。試験：AT-06、AT-07。
-  - [ ] T-103-01 backup S3・権限・state分離を準備する。学習：runtimeと独立したbackupの寿命、Versioningと削除、最小権限を理解する。作業：session-data root/backend、S3 Standard・SSE-S3・Versioning・公開遮断・7日Lifecycle（削除の補助）、対象bucket/prefixに限定したEC2のbackup/restore権限を用意。完了：fmt/validate・Planで保持/撤去境界と料金影響を確認。ここではapplyしない。
+  - [x] T-103-01 backup S3・権限・state分離を準備する。完了：session-data/backend、S3 Standard・SSE-S3・Versioning・公開遮断・HTTPS強制・Lifecycle、bucket/prefix限定のEC2 IAMを用意。fmt/validate・lint/scan成功、Planのdata 7 add/runtime 17 add（権限なし16）・保持/撤去境界・費用区分を確認し、本人が理解。networkの限定例外は本人承認・理由/期限付き。apply未実施。実backup/restoreは02〜03で検証する。
     担当：本人は新しいS3の保護/保持設定とIAM Policyを説明後に記述し、Planの該当部分を確認する。Codexは反復であるsession-data雛形/backend準備・初期化、静的確認・差分整理・記録・Git反映を担当。runtime撤去対象にbackup S3が含まれない管理境界は一緒に確認する。
   - [ ] T-103-02 backup/restore処理とローカル試験を用意する。学習：停止済みの整合点、checksum/manifest、復元前検証、失敗時に成功扱いしない仕組み。作業：固定SSM Documentと共通flock、正常停止・保存/process終了確認→staging→archive/SHA-256/manifest→一意keyへupload、指定backupを検証して正しい空のmount先にrestoreする処理を用意。秘密を除外し、復元に必要な設定/版は残す。完了：正常系、停止/upload失敗、checksum不一致のローカル試験が通る。実S3/systemdでの成立は03で確認し、ローカル成功だけで整合backup完了としない。
     担当：本人はflock・archive・manifest・restoreの初回操作と重要な実装を説明後に実施。Codexは理解済みの試験繰返し・確認・記録・Git反映を担当。
@@ -123,4 +125,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次の1手はT-103-01のPlan理解確認と既存network指摘への対応判断。コード・Planの検証結果は記録済み。確認できたら01を完了として今日は終了する。applyは行わず、T-103-02は次回。**
+**今日はT-103-01完了で終了。次回はT-103-02の設計意図・新しい学習部分の説明と担当分けから。AWS資源は作成していない。**
