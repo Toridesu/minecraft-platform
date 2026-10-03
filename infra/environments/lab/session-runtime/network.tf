@@ -8,6 +8,10 @@ resource "aws_vpc" "lab" {
   }
 }
 
+# Accepted 2026-10-03: disposable lab uses public IPv4 instead of a paid NAT.
+# Inbound is limited to the supplied Minecraft /32; no SSH; destroy after testing.
+# Review by 2026-12-31 or before long-lived use or sensitive data.
+#trivy:ignore:AWS-0164
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.lab.id
   cidr_block              = "10.42.0.0/24"
@@ -78,6 +82,11 @@ resource "aws_vpc_security_group_ingress_rule" "minecraft" {
   description       = "Minecraft Java from the allowed client"
 }
 
+# Accepted 2026-10-03: SSM and fixed JDK/Minecraft downloads need public endpoints.
+# Only TCP 443 is allowed; destination trust/TLS is not enforced by this rule.
+# Disposable data, limited instance IAM and same-session teardown are required.
+# Review by 2026-12-31 or before long-lived use or sensitive data.
+#trivy:ignore:AWS-0104
 resource "aws_vpc_security_group_egress_rule" "https" {
   security_group_id = aws_security_group.minecraft.id
   cidr_ipv4         = "0.0.0.0/0"
