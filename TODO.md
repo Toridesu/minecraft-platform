@@ -1,6 +1,8 @@
 # Production Minecraft Platform — TODO v2.0
 
 ## 現在の状況
+本日の終了記録（2026-10-03、20:15 JST照会開始）：T-103-01完了で終了し、02は未着手。T-103ではapplyしていない。東京リージョンを読み取り専用で再確認し、EC2（停止中を含む）、EBS、自己所有snapshot、EIP/ENI、NAT、VPC Endpoint、ELB、RDS本体/手動snapshot、EFS、ECS cluster、ECR repository、Backup vault、Secrets Manager、Lambda、CloudWatch alarmは該当なし。runtime stateは空。S3はBootstrap state bucketのみで、全44 version合計387,150 bytes（約378 KiB、STANDARD）、delete marker 29件、未完了multipartなし。state保管料・リクエスト料は残る。KMSはAWS管理キー4件のみで、専用customer-managed keyなし。別project由来のCloudWatch log groupは1件、storedBytes=0・保持1日で変更せず保持。Route 53 hosted zoneも該当なし。照会範囲内で本projectのruntime継続課金資源は見つからないが、他リージョン・契約課金・全AWSサービス・実請求は未確認。証跡はGit外の`evidence/end-of-day-20261003/`へ保存。次回はT-103-02の設計意図と学習/反復作業の分担説明から再開する。
+
 現在：**T-004-01〜10、T-005-01〜05、T-006、T-101-01〜06完了。費用基準は月10 USD、1回1 USDを目標、1回の見込みが2 USD以上なら新規作成を中止と承認済み。2026-09-29のsession-runtime applyは14 add / 0 change / 0 destroy、destroyは14 destroyed。Minecraft Java 26.1をMicrosoft OpenJDK 25.0.4.1で起動し、配布物のSHA検証、EULA同意、非rootユーザー・systemd起動停止を確認。本人クライアントから接続し、ログイン・切断を確認。SIGTERM由来の終了コード143はsystemdで成功扱いとなり、サービスは`inactive (dead)`。session-runtime stateは空。EC2/EBS/Public IPv4、VPC/Endpoint等ネットワーク、Minecraft専用IAMはサービス別照会で該当なし。BootstrapのS3 bucketとstate objectは存在し、Bootstrap stateの管理資源一覧も確認。`ExpiresAt`タグの日時を過ぎてもEC2は自動停止しなかったため、タグは自動cleanupではないと実証。90分の約$0.21は事前見積りで実費ではない。実際の請求額はAWS Billing/Cost Explorer反映後に確認する。Bootstrapは通常保持し、完全終了は別手順とする。**
 2026-10-03：T-102-01完了。独立した暗号化gp3 16 GiBのdata EBSとattachmentを追加し、既存のAWS管理キーを参照。本人がfmt/validate、実行先・default workspace・空のruntime stateを確認し、Plan 16 add / 0 change / 0 destroyを確認後、16 resourceのapplyを完了。
 T-102完了（2026-10-03）：Linuxコンテナの模擬試験11件に加え、実systemdでUUID不一致・volume ID不一致・mount不可による起動拒否、Java未起動・空World未生成を確認。正常起動・停止後のWorld全25ファイルのSHA-256を記録し、unmount後にEC2とattachmentのみ交換（2 add / 0 change / 2 destroy）。同じdata EBS・UUIDをformatせず再利用し、起動前の全25ファイル一致と既存World読み込み、交換後EC2への本人接続・切断を確認。本人の明示依頼により後半のAWS操作・撤去はCodexが実施。
@@ -125,4 +127,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**今日はT-103-01完了で終了。次回はT-103-02の設計意図・新しい学習部分の説明と担当分けから。AWS資源は作成していない。**
+**今日はT-103-01完了で終了。終了時の残置確認済みで、runtimeは撤去状態・state空。残る保管料はBootstrap S3等の上記範囲を参照。次回はT-103-02の設計意図・新しい学習部分の説明と担当分けから。確認用の仮ARN Planはapplyしない。**
