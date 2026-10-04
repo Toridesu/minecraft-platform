@@ -58,11 +58,14 @@ jobs:
           terraform fmt -check -diff infra/environments/lab/session-runtime
           terraform fmt -check -diff infra/environments/lab/session-data
 
-      - name: Test Minecraft shutdown log gate
+      - name: Test Minecraft shutdown evidence gates
         run: |
           set -euo pipefail
-          bash -n scripts/check-minecraft-stop-log.sh tests/test-check-minecraft-stop-log.sh
+          for script in scripts/*.sh tests/*.sh; do
+            bash -n "$script"
+          done
           bash tests/test-check-minecraft-stop-log.sh
+          bash tests/test-capture-minecraft-stop.sh
 
       - name: Initialize providers and validate Terraform
         run: |
