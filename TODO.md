@@ -65,7 +65,7 @@ AWS上の実行順：T-101-04（runtime作成と確認）→ T-101-05（サー�
     担当：本人は新しいS3の保護/保持設定とIAM Policyを説明後に記述し、Planの該当部分を確認する。Codexは反復であるsession-data雛形/backend準備・初期化、静的確認・差分整理・記録・Git反映を担当。runtime撤去対象にbackup S3が含まれない管理境界は一緒に確認する。
   - [ ] T-103-02 backup/restore処理とローカル試験を用意する。学習：停止済みの整合点、checksum/manifest、復元前検証、失敗時に成功扱いしない仕組み。作業：固定SSM Documentと共通flock、正常停止・保存/process終了確認→staging→archive/SHA-256/manifest→一意keyへupload、指定backupを検証して正しい空のmount先にrestoreする処理を用意。秘密を除外し、復元に必要な設定/版は残す。完了：正常系、停止/upload失敗、checksum不一致のローカル試験が通る。実S3/systemdでの成立は03で確認し、ローカル成功だけで整合backup完了としない。
     担当：本人はflock・archive・manifest・restoreの初回操作と重要な実装を説明後に実施。Codexは理解済みの試験繰返し・確認・記録・Git反映を担当。
-    進捗（2026-10-04）：本人が使い捨てLinuxコンテナの2端末で共通flockを試し、保持中の取得拒否と解除後の取得成功を確認。次は正常停止・保存完了の判定方法をCodexが調査・提案する。AWS作成なし。02全体は未完了。
+    進捗（2026-10-04）：本人が使い捨てLinuxコンテナの2端末で共通flockを試し、保持中の取得拒否と解除後の取得成功を確認。保存完了を証明できなければ中止する判断を理解し、練習用の停止判定を実装。本人の4ケースに加え、Codexが全8組合せと不正入力の終了コードを確認。これは模擬入力の判定試験で、実Minecraftの保存完了検出は未実装・未検証。次はbackup対象/除外対象の整理とarchive・manifestの学習。AWS作成なし。02全体は未完了。
   - [ ] T-103-03 S3からの復旧を実証し、全演習資源を撤去する。学習：元EBS消失からの復旧、復旧点と失われる変更、S3全versionの削除。作業：session-data/runtimeを作成し、本人がWorldの目印・所持品を用意→整合backupを取得し読めることを確認→backup後の変更を追加→runtimeのみ全撤去→新EC2/新EBSへS3からrestore→本人接続で復旧点のWorld/所持品・dimensionデータと変更差分を確認。時刻とRPO/RTOを記録。完了：AT-06/07の証跡を保存し、runtime、backupの全version/delete marker、session-dataを撤去してサービス別残置なし。Bootstrapは保持。新規作成前に費用基準を確認し、失敗時も未達結果を記録して撤去する。
     担当：本人は初回のS3転送/復元、復旧点の選択、ゲーム内確認、version指定削除を説明後に実施。Codexは理解済みのapply/destroy・再配置・残置確認・記録・Git反映を担当。再確認の必要性は先に説明する。
 - [ ] T-104 最小Agent/Logs/通知を実装。完了：安全な異常から原因を調べ、通知後はalarm/logも撤去。依存：T-101。試験：AT-05。
