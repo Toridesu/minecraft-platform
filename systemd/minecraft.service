@@ -12,7 +12,9 @@ WorkingDirectory=/srv/minecraft/world
 EnvironmentFile=/etc/minecraft/storage.conf
 
 ExecStartPre=+/usr/bin/bash /usr/local/libexec/check-minecraft-storage.sh ${EXPECTED_VOLUME_ID} ${EXPECTED_UUID}
-ExecStart=/opt/microsoft-jdk-25.0.4.1/bin/java -Xms1G -Xmx3G -jar /srv/minecraft/server/server.jar nogui
+# Keep stop-time logging alive while Minecraft's own shutdown hook saves data.
+# This is not a backup-success gate; scoped logs and process checks are required.
+ExecStart=/opt/microsoft-jdk-25.0.4.1/bin/java -Dlog4j2.shutdownHookEnabled=false -Xms1G -Xmx3G -jar /srv/minecraft/server/server.jar nogui
 
 KillSignal=SIGTERM
 SuccessExitStatus=143
