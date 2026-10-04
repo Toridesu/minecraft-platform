@@ -4,6 +4,41 @@
 
 pmp_fail() { printf 'Minecraft operation refused: %s\n' "$1" >&2; exit 1; }
 
+pmp_load_storage_identity() {
+  local config=/etc/minecraft/storage.conf line
+  [[ -f "$config" && ! -L "$config" && "$(stat -c '%u:%a' "$config")" == '0:600' ]] ||
+    pmp_fail 'storage.conf must be root-owned mode 0600'
+  expected_volume=
+  expected_uuid=
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    case "$line" in
+      EXPECTED_VOLUME_ID=*)
+        [[ -z "$expected_volume" ]] || pmp_fail 'duplicate volume ID'
+        expected_volume=${line#*=} ;;
+      EXPECTED_UUID=*)
+        [[ -z "$expected_uuid" ]] || pmp_fail 'duplicate UUID'
+        expected_uuid=${line#*=} ;;
+      ''|'#'*) ;;
+      *) pmp_fail 'unexpected storage.conf content' ;;
+    esac
+  done <"$config"
+  [[ "$expected_volume" =~ ^vol-([a-f0-9]{8}|[a-f0-9]{17})$ &&
+     "$expected_uuid" =~ ^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$ ]] ||
+    pmp_fail 'invalid expected storage identity'
+}
+
+pmp_new_operation_dir() {
+  local kind=$1 evidence_root=/var/lib/minecraft-backup
+  [[ "$kind" == stop || "$kind" == backup || "$kind" == restore ]] || pmp_fail 'invalid operation kind'
+  [[ ! -L "$evidence_root" ]] || pmp_fail 'evidence root is a symlink'
+  if [[ ! -e "$evidence_root" ]]; then
+    install -d -o root -g root -m 0700 "$evidence_root" || pmp_fail 'cannot create evidence root'
+  fi
+  [[ -d "$evidence_root" && "$(stat -c '%u:%a' "$evidence_root")" == '0:700' ]] ||
+    pmp_fail 'evidence root must be root-owned mode 0700'
+  mktemp -d "$evidence_root/$kind-XXXXXXXX" || pmp_fail 'cannot create operation directory'
+}
+
 pmp_acquire_operation_lock() {
   [[ "$EUID" -eq 0 ]] || pmp_fail 'root is required'
   local lock_dir=/run/minecraft-operations

@@ -67,6 +67,12 @@ jobs:
           bash tests/test-check-minecraft-stop-log.sh
           bash tests/test-capture-minecraft-stop.sh
 
+      - name: Test Minecraft backup with fake AWS
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/minecraft-backup.py tests/test-minecraft-backup.py
+          python3 tests/test-minecraft-backup.py
+
       - name: Initialize providers and validate Terraform
         run: |
           set -euo pipefail

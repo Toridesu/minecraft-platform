@@ -24,3 +24,7 @@
 *.log
 .env
 .env.*
+
+# Pythonのローカル生成物
+__pycache__/
+*.py[cod]

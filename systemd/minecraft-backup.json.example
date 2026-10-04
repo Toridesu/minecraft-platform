@@ -1,0 +1,7 @@
+{
+  "account_id": "REPLACE_WITH_ACCOUNT_ID",
+  "region": "ap-northeast-1",
+  "bucket": "REPLACE_WITH_ACTUAL_SESSION_DATA_BUCKET",
+  "run_id": "REPLACE_WITH_CURRENT_RUN_ID",
+  "git_sha": "REPLACE_WITH_DEPLOYED_40_CHARACTER_GIT_SHA"
+}
