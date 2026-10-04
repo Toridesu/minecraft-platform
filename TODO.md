@@ -1,6 +1,7 @@
 # Production Minecraft Platform — TODO v2.0
 
 ## 現在の状況
+終了・延期（2026-10-04）：本人の希望で実AWS演習を次の日以降へ延期。T-103-02完了、T-103-03は作成前準備までで未完了。data Planは本人未承認・未適用で、runtime/dataの新規リソースを作成していない。本日の確認用data Planは証跡として保管し、次回applyには使わない。再開時は実行日用のRunId/ExpiresAt、最新接続CIDR、AWS identity/workspace/state、費用・月累計・同日撤去可能な時間を確認し、data Planを作り直して本人レビューから再開する。data作成後に実bucket ARNでruntimeをPlanする。延期は自動実行・翌日のapply許可ではない。直前の10-04照会では東京のEC2/EBS/EIP/NAT/Endpoint/ELBv2/自己所有snapshotなし、runtime state空・data state未作成。Bootstrap S3の保管料/リクエスト料は残る。延期時点で追加のAWS照会は行っていない。
 T-103-03準備（2026-10-04）：本人依頼でCodexが作成前の読み取り確認とsession-data Planを準備。前回と同じaccount/role、両workspace default、runtime state空、data state未作成（S3 404）を確認。東京のEC2/EBS/EIP/NAT/Endpoint/ELBv2/自己所有snapshotは該当なし、bucketはBootstrapのみ。最新公式単価でEC2合計4時間・短期S3等の余裕を含め約0.66 USD税別を仮見積り。data Planは7 add / 0 change / 0 destroy。Git外のevidence/t103-03-preflight/にPlan・入力/境界/見積りを保存。本人のdata Plan確認と月予算・同日撤去可能な時間の確認待ち。apply未実施。実bucket ARN確定後にruntime Planを作るため、runtimeの古い入力/Planは使用禁止。T-103-03は未完了。
 2026-10-04更新：T-103-02のコード準備・ローカル試験を完了。固定SSM Document、停止確認付きbackup、version/hash指定restoreを実装。ネットワーク無効のLinuxで85ケース成功、runtimeのfmt/validate/TFLint成功。AWSへのapply・SSM送信・S3転送は未実施。次はT-103-03の設計意図・学習/担当分け、最新の費用と入力値の確認から。backup有効時のruntimeはSSM Document 2件追加で19 resource（無効時16）、session-dataは7 resourceの想定となる。実Planで再確認し、以前の仮ARN Planは使わない。以下の10-03終了記録は過去の残置照会であり、本日の再照会ではない。
 本日の終了記録（2026-10-03、20:15 JST照会開始）：T-103-01完了で終了し、02は未着手。T-103ではapplyしていない。東京リージョンを読み取り専用で再確認し、EC2（停止中を含む）、EBS、自己所有snapshot、EIP/ENI、NAT、VPC Endpoint、ELB、RDS本体/手動snapshot、EFS、ECS cluster、ECR repository、Backup vault、Secrets Manager、Lambda、CloudWatch alarmは該当なし。runtime stateは空。S3はBootstrap state bucketのみで、全44 version合計387,150 bytes（約378 KiB、STANDARD）、delete marker 29件、未完了multipartなし。state保管料・リクエスト料は残る。KMSはAWS管理キー4件のみで、専用customer-managed keyなし。別project由来のCloudWatch log groupは1件、storedBytes=0・保持1日で変更せず保持。Route 53 hosted zoneも該当なし。照会範囲内で本projectのruntime継続課金資源は見つからないが、他リージョン・契約課金・全AWSサービス・実請求は未確認。証跡はGit外の`evidence/end-of-day-20261003/`へ保存。次回はT-103-02の設計意図と学習/反復作業の分担説明から再開する。
@@ -71,7 +72,7 @@ AWS上の実行順：T-101-04（runtime作成と確認）→ T-101-05（サー�
     実装：共通lock、invocation/cursor限定の停止証拠取得、process/unit/storage確認に加え、backup entry point、staging、非秘密設定/EULA保持、archive/manifest、一意prefixへの条件付きS3 Putとversion指定readback/hash/サイズ照合を接続。失敗時は成功receiptを作らず、試行prefix/部分生成物情報とroot-privateの失敗記録を保持し、自動再起動しない。現profileはVanilla 26.1/JDK 25.0.4.1限定、任意設定/MODには未対応。
     完了検証：ネットワーク無効のLinuxコンテナでbackup模擬22、restore模擬15（不正archiveはさらに7入力）、SSM定義2、停止ログ12、停止取得20、実flock3、storage模擬11の計85ケース成功。restoreは指定manifest/version/hash、archive検証、空target、EBS/UUID/停止状態のguard、上書き・危険な展開先拒否、途中失敗の保全を実装。自動format/起動/削除はしない。SSMは固定entry pointとENV_VAR入力、旧Agentの環境変数未設定時は拒否。runtimeのfmt/validate/TFLint成功、CIに追加試験を接続（新revisionのCI結果未確認）。証跡はGit外のevidence/t103-archive-learning/とevidence/t103-stop-research/。AWS作成なし。実AWS/S3/systemd/実EBS経路と本人ゲーム内復旧確認は03で実施する。
   - [ ] T-103-03 S3からの復旧を実証し、全演習資源を撤去する。学習：元EBS消失からの復旧、復旧点と失われる変更、S3全versionの削除。作業：session-data/runtimeを作成し、本人がWorldの目印・所持品を用意→整合backupを取得し読めることを確認→backup後の変更を追加→runtimeのみ全撤去→新EC2/新EBSへS3からrestore→本人接続で復旧点のWorld/所持品・dimensionデータと変更差分を確認。時刻とRPO/RTOを記録。完了：AT-06/07の証跡を保存し、runtime、backupの全version/delete marker、session-dataを撤去してサービス別残置なし。Bootstrapは保持。新規作成前に費用基準を確認し、失敗時も未達結果を記録して撤去する。
-    進捗：dataの新Plan 7 addを準備済み、本人レビュー前・applyなし。費用は合計4 instance-hoursを前提に約0.66 USD税別（実請求ではない）。月累計と当日の作業時間を本人確認後にdataを作成し、実bucket ARN・最新接続CIDR・新RunId/期限でruntime Plan 19 addを確認する。旧仮ARN/旧Planは使わない。
+    進捗：10-04のdata Plan 7 addは本人レビュー前・applyなしのまま延期。証跡のみ保持し、次回は入力/期限・実行先・費用/月累計を再確認してPlanを作り直す。合計4 instance-hoursで約0.66 USD税別は10-04の仮見積り（実請求ではない）。再Planの本人確認後にdataを作成し、実bucket ARNでruntime Plan 19 addを確認する。旧仮ARN/旧Planは使わない。
     担当：本人は初回のS3転送/復元、復旧点の選択、ゲーム内確認、version指定削除を説明後に実施。Codexは理解済みのapply/destroy・再配置・残置確認・記録・Git反映を担当。再確認の必要性は先に説明する。
 - [ ] T-104 最小Agent/Logs/通知を実装。完了：安全な異常から原因を調べ、通知後はalarm/logも撤去。依存：T-101。試験：AT-05。
 - [ ] T-105 coreの全撤去と証跡回収を実証。完了：EC2/EBS/S3 versions/Logs等の残置なし、費用確認を記録。依存：T-103、T-104。試験：AT-13、AT-22。
@@ -134,4 +135,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**次はT-103-03。設計意図・初回のS3/SSM復元操作・担当分けを説明し、最新の費用・RunId・期限・実bucket ARNで再Planする。02ではAWSを作っていない。残置の最終照会は10-03であり、Bootstrap S3等の保管料は残る。確認用の仮ARN Planはapplyしない。**
+**今日はここまで。次回はT-103-03の作成前確認から再開し、実行日用の入力/期限と費用を更新→data再Plan→本人レビュー。10-04の未適用Planは証跡のみとしapplyしない。AWS新規作成なし。直前の残置照会は10-04の上記範囲で、Bootstrap S3等の保管料は残る。自動再開・自動applyはしない。**
