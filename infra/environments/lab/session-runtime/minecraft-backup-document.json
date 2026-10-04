@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Fixed Vanilla lab stopped backup; scripts must be installed from the reviewed revision.",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "Backup",
+      "precondition": {"StringEquals": ["platformType", "Linux"]},
+      "inputs": {
+        "timeoutSeconds": "1800",
+        "runCommand": ["set -eu", "/usr/bin/bash /usr/local/libexec/minecraft-platform/backup-minecraft.sh"]
+      }
+    }
+  ]
+}

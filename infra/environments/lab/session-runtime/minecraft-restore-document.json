@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Restore a pinned manifest to an empty guarded EBS. Requires ENV_VAR-capable SSM Agent.",
+  "parameters": {
+    "ManifestKey": {
+      "type": "String",
+      "interpolationType": "ENV_VAR",
+      "allowedPattern": "^backups/[A-Za-z0-9][A-Za-z0-9_-]{0,63}/[0-9]{8}T[0-9]{6}Z-[a-f0-9]{32}/manifest\\.json$"
+    },
+    "ManifestVersionId": {
+      "type": "String",
+      "interpolationType": "ENV_VAR",
+      "allowedPattern": "^[A-Za-z0-9._~+/=-]{1,1024}$"
+    },
+    "ManifestSha256": {
+      "type": "String",
+      "interpolationType": "ENV_VAR",
+      "allowedPattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "Restore",
+      "precondition": {"StringEquals": ["platformType", "Linux"]},
+      "inputs": {
+        "timeoutSeconds": "1800",
+        "runCommand": [
+          "set -eu",
+          ": \"${SSM_ManifestKey:?Missing ENV_VAR support or ManifestKey}\" \"${SSM_ManifestVersionId:?Missing ManifestVersionId}\" \"${SSM_ManifestSha256:?Missing ManifestSha256}\"",
+          "/usr/bin/bash /usr/local/libexec/minecraft-platform/restore-minecraft.sh \"$SSM_ManifestKey\" \"$SSM_ManifestVersionId\" \"$SSM_ManifestSha256\""
+        ]
+      }
+    }
+  ]
+}

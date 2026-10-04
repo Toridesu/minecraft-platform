@@ -1,6 +1,7 @@
 # Production Minecraft Platform — TODO v2.0
 
 ## 現在の状況
+2026-10-04更新：T-103-02のコード準備・ローカル試験を完了。固定SSM Document、停止確認付きbackup、version/hash指定restoreを実装。ネットワーク無効のLinuxで85ケース成功、runtimeのfmt/validate/TFLint成功。AWSへのapply・SSM送信・S3転送は未実施。次はT-103-03の設計意図・学習/担当分け、最新の費用と入力値の確認から。backup有効時のruntimeはSSM Document 2件追加で19 resource（無効時16）、session-dataは7 resourceの想定となる。実Planで再確認し、以前の仮ARN Planは使わない。以下の10-03終了記録は過去の残置照会であり、本日の再照会ではない。
 本日の終了記録（2026-10-03、20:15 JST照会開始）：T-103-01完了で終了し、02は未着手。T-103ではapplyしていない。東京リージョンを読み取り専用で再確認し、EC2（停止中を含む）、EBS、自己所有snapshot、EIP/ENI、NAT、VPC Endpoint、ELB、RDS本体/手動snapshot、EFS、ECS cluster、ECR repository、Backup vault、Secrets Manager、Lambda、CloudWatch alarmは該当なし。runtime stateは空。S3はBootstrap state bucketのみで、全44 version合計387,150 bytes（約378 KiB、STANDARD）、delete marker 29件、未完了multipartなし。state保管料・リクエスト料は残る。KMSはAWS管理キー4件のみで、専用customer-managed keyなし。別project由来のCloudWatch log groupは1件、storedBytes=0・保持1日で変更せず保持。Route 53 hosted zoneも該当なし。照会範囲内で本projectのruntime継続課金資源は見つからないが、他リージョン・契約課金・全AWSサービス・実請求は未確認。証跡はGit外の`evidence/end-of-day-20261003/`へ保存。次回はT-103-02の設計意図と学習/反復作業の分担説明から再開する。
 
 現在：**T-004-01〜10、T-005-01〜05、T-006、T-101-01〜06完了。費用基準は月10 USD、1回1 USDを目標、1回の見込みが2 USD以上なら新規作成を中止と承認済み。2026-09-29のsession-runtime applyは14 add / 0 change / 0 destroy、destroyは14 destroyed。Minecraft Java 26.1をMicrosoft OpenJDK 25.0.4.1で起動し、配布物のSHA検証、EULA同意、非rootユーザー・systemd起動停止を確認。本人クライアントから接続し、ログイン・切断を確認。SIGTERM由来の終了コード143はsystemdで成功扱いとなり、サービスは`inactive (dead)`。session-runtime stateは空。EC2/EBS/Public IPv4、VPC/Endpoint等ネットワーク、Minecraft専用IAMはサービス別照会で該当なし。BootstrapのS3 bucketとstate objectは存在し、Bootstrap stateの管理資源一覧も確認。`ExpiresAt`タグの日時を過ぎてもEC2は自動停止しなかったため、タグは自動cleanupではないと実証。90分の約$0.21は事前見積りで実費ではない。実際の請求額はAWS Billing/Cost Explorer反映後に確認する。Bootstrapは通常保持し、完全終了は別手順とする。**
@@ -63,11 +64,11 @@ AWS上の実行順：T-101-04（runtime作成と確認）→ T-101-05（サー�
 - [ ] T-103 session-dataのS3と整合backup/restoreを実装。完了：runtimeを壊しても新EBSに戻せる。依存：T-102。試験：AT-06、AT-07。
   - [x] T-103-01 backup S3・権限・state分離を準備する。完了：session-data/backend、S3 Standard・SSE-S3・Versioning・公開遮断・HTTPS強制・Lifecycle、bucket/prefix限定のEC2 IAMを用意。fmt/validate・lint/scan成功、Planのdata 7 add/runtime 17 add（権限なし16）・保持/撤去境界・費用区分を確認し、本人が理解。networkの限定例外は本人承認・理由/期限付き。apply未実施。実backup/restoreは02〜03で検証する。
     担当：本人は新しいS3の保護/保持設定とIAM Policyを説明後に記述し、Planの該当部分を確認する。Codexは反復であるsession-data雛形/backend準備・初期化、静的確認・差分整理・記録・Git反映を担当。runtime撤去対象にbackup S3が含まれない管理境界は一緒に確認する。
-  - [ ] T-103-02 backup/restore処理とローカル試験を用意する。学習：停止済みの整合点、checksum/manifest、復元前検証、失敗時に成功扱いしない仕組み。作業：固定SSM Documentと共通flock、正常停止・保存/process終了確認→staging→archive/SHA-256/manifest→一意keyへupload、指定backupを検証して正しい空のmount先にrestoreする処理を用意。秘密を除外し、復元に必要な設定/版は残す。完了：正常系、停止/upload失敗、checksum不一致のローカル試験が通る。実S3/systemdでの成立は03で確認し、ローカル成功だけで整合backup完了としない。
+  - [x] T-103-02 backup/restore処理とローカル試験を用意する。学習：停止済みの整合点、checksum/manifest、復元前検証、失敗時に成功扱いしない仕組み。作業：固定SSM Documentと共通flock、正常停止・保存/process終了確認→staging→archive/SHA-256/manifest→一意keyへupload、指定backupを検証して正しい空のmount先にrestoreする処理を用意。秘密を除外し、復元に必要な設定/版は残す。完了：正常系、停止/upload失敗、checksum不一致のローカル試験が通る。実S3/systemdでの成立は03で確認し、ローカル成功だけで整合backup完了としない。
     担当：本人はflock・archive・manifest・restoreの初回操作と重要な実装を説明後に実施。Codexは理解済みの試験繰返し・確認・記録・Git反映を担当。
     進捗（2026-10-04）：本人がflockの競合拒否、保存を確認できなければ中止する判断、allowlistでのarchive作成を学習。本人依頼でCodexがmanifest記入・照合と架空データの復元/上書き拒否を実施。公式固定版をローカル比較し、停止ログを残すJVM設定を本人理解後に反映。過去AWSの保存失敗は断定しない。
     実装：共通lock、invocation/cursor限定の停止証拠取得、process/unit/storage確認に加え、backup entry point、staging、非秘密設定/EULA保持、archive/manifest、一意prefixへの条件付きS3 Putとversion指定readback/hash/サイズ照合を接続。失敗時は成功receiptを作らず、試行prefix/部分生成物情報とroot-privateの失敗記録を保持し、自動再起動しない。現profileはVanilla 26.1/JDK 25.0.4.1限定、任意設定/MODには未対応。
-    検証：ネットワーク無効のLinuxコンテナでbackup模擬22、停止ログ12、停止取得20、実flock3、storage模擬11の計68ケース成功。CIにbackup模擬試験も追加（新revisionのCI結果未確認）。証跡はGit外のevidence/t103-archive-learning/とevidence/t103-stop-research/。実AWS/S3/systemd/実EBS経路は未検証。残作業は実用restore処理と固定SSM Documentの準備・ローカル試験。AWS作成なし、02全体未完了。
+    完了検証：ネットワーク無効のLinuxコンテナでbackup模擬22、restore模擬15（不正archiveはさらに7入力）、SSM定義2、停止ログ12、停止取得20、実flock3、storage模擬11の計85ケース成功。restoreは指定manifest/version/hash、archive検証、空target、EBS/UUID/停止状態のguard、上書き・危険な展開先拒否、途中失敗の保全を実装。自動format/起動/削除はしない。SSMは固定entry pointとENV_VAR入力、旧Agentの環境変数未設定時は拒否。runtimeのfmt/validate/TFLint成功、CIに追加試験を接続（新revisionのCI結果未確認）。証跡はGit外のevidence/t103-archive-learning/とevidence/t103-stop-research/。AWS作成なし。実AWS/S3/systemd/実EBS経路と本人ゲーム内復旧確認は03で実施する。
   - [ ] T-103-03 S3からの復旧を実証し、全演習資源を撤去する。学習：元EBS消失からの復旧、復旧点と失われる変更、S3全versionの削除。作業：session-data/runtimeを作成し、本人がWorldの目印・所持品を用意→整合backupを取得し読めることを確認→backup後の変更を追加→runtimeのみ全撤去→新EC2/新EBSへS3からrestore→本人接続で復旧点のWorld/所持品・dimensionデータと変更差分を確認。時刻とRPO/RTOを記録。完了：AT-06/07の証跡を保存し、runtime、backupの全version/delete marker、session-dataを撤去してサービス別残置なし。Bootstrapは保持。新規作成前に費用基準を確認し、失敗時も未達結果を記録して撤去する。
     担当：本人は初回のS3転送/復元、復旧点の選択、ゲーム内確認、version指定削除を説明後に実施。Codexは理解済みのapply/destroy・再配置・残置確認・記録・Git反映を担当。再確認の必要性は先に説明する。
 - [ ] T-104 最小Agent/Logs/通知を実装。完了：安全な異常から原因を調べ、通知後はalarm/logも撤去。依存：T-101。試験：AT-05。
@@ -131,4 +132,4 @@ M5出口：Goの機能を増やさず、コンテナの変更・障害・撤去�
 - [ ] サービス別に残置確認。失敗/例外は期限と責任者を記録。
 - [ ] 後日の請求確認を記録し、次に行う1つのTODOを決める。
 
-**今日はT-103-01完了で終了。終了時の残置確認済みで、runtimeは撤去状態・state空。残る保管料はBootstrap S3等の上記範囲を参照。次回はT-103-02の設計意図・新しい学習部分の説明と担当分けから。確認用の仮ARN Planはapplyしない。**
+**次はT-103-03。設計意図・初回のS3/SSM復元操作・担当分けを説明し、最新の費用・RunId・期限・実bucket ARNで再Planする。02ではAWSを作っていない。残置の最終照会は10-03であり、Bootstrap S3等の保管料は残る。確認用の仮ARN Planはapplyしない。**

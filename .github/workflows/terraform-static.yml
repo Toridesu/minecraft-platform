@@ -67,11 +67,13 @@ jobs:
           bash tests/test-check-minecraft-stop-log.sh
           bash tests/test-capture-minecraft-stop.sh
 
-      - name: Test Minecraft backup with fake AWS
+      - name: Test Minecraft backup and restore with fake AWS
         run: |
           set -euo pipefail
           python3 -m py_compile scripts/minecraft-backup.py tests/test-minecraft-backup.py
           python3 tests/test-minecraft-backup.py
+          python3 tests/test-minecraft-restore.py
+          python3 tests/test-minecraft-ssm-documents.py
 
       - name: Initialize providers and validate Terraform
         run: |
@@ -91,6 +93,10 @@ jobs:
             done
 
             cp "${root}/.terraform.lock.hcl" "${validation_dir}/"
+            for document in "${root}"/*-document.json; do
+              [[ -f "$document" ]] || continue
+              cp "$document" "${validation_dir}/"
+            done
 
             (
               cd "${validation_dir}"
