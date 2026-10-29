@@ -8,34 +8,7 @@ Terraform で EC2 と World 用 EBS を構築し、Systems Manager から管理�
 
 ## 完成時の構成
 
-```mermaid
-flowchart TB
-    Player[本人 / Minecraft クライアント] -->|接続元を制限| MC
-    User[本人 / SSM セッション] --> SSM[Systems Manager]
-    Git[GitHub Actions / OIDC] --> TF[Terraform]
-    TF --> Runtime
-    TF --> Data
-
-    subgraph Runtime[演習用の実行環境]
-        MC[EC2 / Minecraft / systemd] --- EBS[(World 用 EBS)]
-        ALB[internal ALB] --> API[ECS Fargate / 管理 API]
-    end
-
-    subgraph Data[復旧確認まで保持するデータ]
-        S3[(S3 バックアップ)]
-        Backup[AWS Backup]
-        ECR[ECR / コンテナイメージ]
-    end
-
-    SSM -->|管理操作| MC
-    MC -->|SSM ポート転送時の経路| ALB
-    API -->|固定した操作のみ| SSM
-    MC --> S3
-    EBS --> Backup
-    ECR --> API
-    MC --> CW[CloudWatch / メトリクス・ログ]
-    CW --> SNS[SNS / メール通知]
-```
+![Minecraft Platform の完成時構成図。EC2 と World 用 EBS、S3 バックアップ、SSM 管理、CloudWatch・SNS、追加演習の管理 API と AWS Backup](assets/architecture-overview.png)
 
 ECS、ALB、AWS Backup などは、それぞれの演習時に作成する設計です。実行環境とバックアップの寿命を分け、復旧を確認してから不要なデータも整理します。
 
