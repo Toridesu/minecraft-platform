@@ -29,11 +29,28 @@ flowchart LR
 
 管理には Systems Manager を使用し、SSH を外部公開しない設計です。ECS や AWS Backup などは必要な演習時だけ使用します。演習中のバックアップは復旧確認まで保持し、終了時に不要なデータとともに整理します。
 
-## 使用する技術
+## 技術スタック
 
-- **AWS**：VPC、EC2、EBS、S3、IAM、Systems Manager、CloudWatch、SNS、KMS、AWS Backup、ECS/Fargate
-- **構築・変更管理**：Terraform、GitHub Actions、OIDC、TFLint、Trivy
-- **サーバー・処理**：Minecraft Java Edition、Linux、systemd、Bash、Python
+| 分野 | 技術 | 用途 |
+| --- | --- | --- |
+| インフラ | AWS VPC、EC2、EBS、S3 | ネットワーク、サーバー、World の保存とバックアップ |
+| インフラの構築 | Terraform、AWS provider | AWS リソースの定義、変更、撤去 |
+| サーバー | Minecraft Java Edition、Linux、systemd | サーバーの起動・停止とサービス管理 |
+| セキュリティ | IAM、Security Group、Systems Manager、KMS | 権限管理、通信制限、安全な管理経路、暗号化 |
+| 監視 | CloudWatch、CloudWatch Agent、SNS | メトリクス・ログの収集とメール通知 |
+| 自動化・テスト | Bash、Python | バックアップ・復旧処理とローカル模擬テスト |
+| CI/CD | GitHub Actions、OIDC、TFLint、Trivy | 認証、Terraform の検査、セキュリティ検査 |
+| 今後の演習 | AWS Backup、Docker、ECR、ECS/Fargate、internal ALB | バックアップ復旧と管理 API のコンテナ運用 |
+
+## このプロジェクトで学ぶこと
+
+- **AWS と Terraform**：ネットワーク、サーバー、ストレージの関係と、構成をコードで再現・変更する方法。
+- **Linux とサーバー運用**：systemd によるプロセス管理、ディスクのマウント確認、ログを使った調査。
+- **セキュリティ**：最小権限、通信制限、暗号化、SSH を公開しない管理方法。
+- **監視と障害対応**：メトリクスとログから異常を見つけ、原因を調べる方法。
+- **バックアップと復旧**：データを保存し、サーバー消失後に復元する手順と、失われる変更の範囲。
+- **CI/CD とコンテナ**：変更の検査、GitHub Actions からの認証、コンテナのデプロイとロールバック。
+- **費用と撤去**：AWS リソースの寿命を管理し、演習終了後に残置と費用を確認する方法。
 
 ## 現在の状態
 
