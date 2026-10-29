@@ -3,6 +3,7 @@
 import base64
 import importlib.util
 import json
+import os
 from pathlib import Path
 import tempfile
 import tarfile
@@ -234,17 +235,45 @@ class BackupTests(unittest.TestCase):
         config = self.root / "config.json"
         config.write_text(json.dumps(CFG))
         config.chmod(0o600)
-        self.assertEqual(backup.load_config(config), CFG)
+        info = list(config.lstat())
+        info[4] = 0  # Model a root-owned fixture without requiring root to run tests.
+        with patch.object(Path, "lstat", return_value=os.stat_result(info)):
+            self.assertEqual(backup.load_config(config), CFG)
         config.chmod(0o644)
-        with self.assertRaises(ValueError):
-            backup.load_config(config)
+        info = list(config.lstat())
+        info[4] = 0
+        with patch.object(Path, "lstat", return_value=os.stat_result(info)):
+            with self.assertRaisesRegex(ValueError, "root-owned 0600"):
+                backup.load_config(config)
+
+    def test_non_root_owned_config_rejected(self):
+        config = self.root / "config.json"
+        config.write_text(json.dumps(CFG))
+        config.chmod(0o600)
+        info = list(config.lstat())
+        info[4] = 12345
+        with patch.object(Path, "lstat", return_value=os.stat_result(info)):
+            with self.assertRaisesRegex(ValueError, "root-owned 0600"):
+                backup.load_config(config)
+
+    def test_symlink_config_rejected(self):
+        config = self.root / "config.json"
+        config.write_text(json.dumps(CFG))
+        config.chmod(0o600)
+        link = self.root / "config-link.json"
+        link.symlink_to(config)
+        with self.assertRaisesRegex(ValueError, "root-owned 0600"):
+            backup.load_config(link)
 
     def test_duplicate_config_keys_rejected(self):
         config = self.root / "config.json"
         config.write_text('{"account_id":"123456789012","account_id":"000000000000"}')
         config.chmod(0o600)
-        with self.assertRaises(ValueError):
-            backup.load_config(config)
+        info = list(config.lstat())
+        info[4] = 0
+        with patch.object(Path, "lstat", return_value=os.stat_result(info)):
+            with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
+                backup.load_config(config)
 
 
 if __name__ == "__main__":

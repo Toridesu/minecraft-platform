@@ -68,3 +68,17 @@ variable "backup_bucket_arn" {
     error_message = "backup_bucket_arn must be empty or an exact S3 bucket ARN without an object path or wildcard."
   }
 }
+
+
+variable "enable_monitoring" {
+  description = "Enable the lab monitoring resources, including a billable customer-managed KMS key."
+  type        = bool
+  default     = false
+}
+
+variable "monitoring_email" {
+  description = "Email for SNS confirmation; stored in Terraform state when monitoring is enabled."
+  type        = string
+  default     = ""
+  sensitive   = true
+}

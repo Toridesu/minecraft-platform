@@ -1,0 +1,35 @@
+{
+  "agent": {
+    "metrics_collection_interval": 60,
+    "run_as_user": "cwagent"
+  },
+  "metrics": {
+    "namespace": "PMP/Lab",
+    "append_dimensions": {
+      "InstanceId": "${aws:InstanceId}"
+    },
+    "metrics_collected": {
+      "mem": {
+        "measurement": ["used_percent"]
+      },
+      "disk": {
+        "measurement": ["used_percent"],
+        "resources": ["/srv/minecraft/world"],
+        "drop_device": true
+      }
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/srv/minecraft/world/logs/latest.log",
+            "log_group_name": "/pmp/lab/minecraft",
+            "log_stream_name": "{instance_id}/minecraft"
+          }
+        ]
+      }
+    }
+  }
+}

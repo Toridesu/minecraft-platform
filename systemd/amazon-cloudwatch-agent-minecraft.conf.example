@@ -1,0 +1,11 @@
+# Example drop-in for amazon-cloudwatch-agent.service. Not installed automatically.
+[Unit]
+RequiresMountsFor=/srv/minecraft/world
+BindsTo=srv-minecraft-world.mount
+After=srv-minecraft-world.mount
+
+[Service]
+EnvironmentFile=/etc/minecraft/storage.conf
+ExecStartPre=+/usr/bin/bash /usr/local/libexec/check-minecraft-storage.sh ${EXPECTED_VOLUME_ID} ${EXPECTED_UUID}
+# Fail before starting if the non-root agent cannot traverse and read the log.
+ExecStartPre=+/usr/sbin/runuser -u cwagent -- /usr/bin/test -r /srv/minecraft/world/logs/latest.log
