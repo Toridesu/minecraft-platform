@@ -1,57 +1,100 @@
 # Minecraft Platform
 
-Minecraft サーバーを題材に、AWS のインフラを構築・運用・復旧するための学習用プラットフォームを作っています。Terraform で環境を再現し、問題が起きたときの調査や復旧、演習後の撤去までを一通り実践するプロジェクトです。
+Minecraft サーバーを題材に、AWS インフラの構築から監視・バックアップ・障害復旧・撤去までを実践する学習用プラットフォームです。
 
-## 完成するとできること
+Terraform で EC2 と World 用 EBS を構築し、Systems Manager から管理します。サーバー交換時には World を引き継ぎ、サーバーやディスクを失った場合にはバックアップから復旧できる構成を目指しています。
 
-- **環境を作る**：Terraform でネットワーク、Minecraft サーバー、World 用ディスクを構築し、本人が接続して動作を確認する。
-- **状態を調べる**：CPU・メモリ・ディスクの使用状況とログを確認し、CPU・メモリのアラームをメールで受け取る。
-- **データを復旧する**：World を S3 にバックアップし、サーバーやディスクを作り直したあとに復元する。AWS Backup での復旧も別の演習として行う。
-- **変更を管理する**：GitHub Actions と AWS の OIDC 認証を使い、変更内容やテスト結果を確認してから反映する。
-- **管理機能を試す**：必要な演習で、ECS/Fargate 上の小さな管理 API とコンテナのデプロイ・ロールバックを試す。
-- **安全に終了する**：演習結果を記録し、不要なリソースと一時データを撤去して、残置と費用を確認する。
+完成時には、GitHub Actions と OIDC による変更管理、CloudWatch による監視、小さな管理 API のコンテナ運用を組み合わせ、環境の再構築から障害対応、費用確認と撤去までを一通り検証できるようにします。
 
-実行環境は常時稼働させず、学習するときに作成します。使い捨てのテスト World を対象とし、重要なデータや第三者向けサービスには使用しません。
-
-## 完成時の構成イメージ
+## 完成時の構成
 
 ```mermaid
-flowchart LR
-    Git[GitHub Actions] --> TF[Terraform]
-    TF --> EC2[EC2 / Minecraft]
-    EC2 --> EBS[World 用 EBS]
-    EC2 --> S3[S3 バックアップ]
-    EC2 --> CW[CloudWatch / ログ・監視]
+flowchart TB
+    Player[本人 / Minecraft クライアント] -->|接続元を制限| MC
+    User[本人 / SSM セッション] --> SSM[Systems Manager]
+    Git[GitHub Actions / OIDC] --> TF[Terraform]
+    TF --> Runtime
+    TF --> Data
+
+    subgraph Runtime[演習用の実行環境]
+        MC[EC2 / Minecraft / systemd] --- EBS[(World 用 EBS)]
+        ALB[internal ALB] --> API[ECS Fargate / 管理 API]
+    end
+
+    subgraph Data[復旧確認まで保持するデータ]
+        S3[(S3 バックアップ)]
+        Backup[AWS Backup]
+        ECR[ECR / コンテナイメージ]
+    end
+
+    SSM -->|管理操作| MC
+    MC -->|SSM ポート転送時の経路| ALB
+    API -->|固定した操作のみ| SSM
+    MC --> S3
+    EBS --> Backup
+    ECR --> API
+    MC --> CW[CloudWatch / メトリクス・ログ]
     CW --> SNS[SNS / メール通知]
-    SSM[Systems Manager] --> EC2
-    API[ECS / 管理 API] --> SSM
 ```
 
-管理には Systems Manager を使用し、SSH を外部公開しない設計です。ECS や AWS Backup などは必要な演習時だけ使用します。演習中のバックアップは復旧確認まで保持し、終了時に不要なデータとともに整理します。
+ECS、ALB、AWS Backup などは、それぞれの演習時に作成する設計です。実行環境とバックアップの寿命を分け、復旧を確認してから不要なデータも整理します。
+
+## 技術的な特徴
+
+完成時に目指す機能と設計は以下のとおりです。
+
+| 観点 | 内容 |
+| --- | --- |
+| Infrastructure as Code | Terraform で基盤、実行環境、バックアップ領域を分けて管理 |
+| データ管理 | EC2 と独立した EBS に World を保存し、サーバー交換時に再利用 |
+| 起動前の確認 | EBS の ID とファイルシステムの UUID を確認し、誤った保存先での起動を拒否 |
+| 管理経路 | Systems Manager を使用し、SSH や RCON を外部公開しない |
+| バックアップ・復旧 | Minecraft の停止・保存を確認してバックアップし、version と checksum を指定して復元 |
+| 監視 | CPU・メモリ・ディスク・ログを観測し、CPU・メモリのアラームを SNS で通知 |
+| CI/CD | 静的検査、変更内容のレビュー、OIDC 認証による AWS 操作を組み合わせる |
+| コンテナ運用 | 必要な演習で管理 API を ECR・ECS/Fargate・internal ALB に配置し、ロールバックまで確認 |
+| コスト管理 | 短時間の演習ごとに構築・確認・撤去し、生成物と残課金も確認 |
+
+## 主な設計判断
+
+### サーバーと World を分離する
+
+EC2 を交換する操作と、World を削除する操作を分けます。起動前にはマウント先、EBS の ID、UUID を確認し、ディスクの接続ミスで別の場所に空の World を作ることを防ぎます。
+
+### バックアップは復旧まで確認する
+
+バックアップの取得成功に加え、新しい環境へ戻した World と、失われた変更の範囲を確認します。S3 の version と checksum を使い、どの復旧点を使ったか追跡できる設計です。
+
+### 管理操作の入口と権限を絞る
+
+サーバー管理には Systems Manager を使用します。管理 API は internal ALB の背後に配置し、対象と操作を限定した SSM Document を呼び出す設計です。GitHub Actions からの AWS 操作には OIDC を使い、長期アクセスキーを保存しません。
+
+### 演習ごとに撤去する
+
+学習用のテスト World を使い、環境を必要なときに作成します。終了時には実行環境と不要なバックアップを撤去し、Terraform の状態だけでなく AWS 側の残置と費用も確認します。Terraform state などの管理基盤は、通常の演習環境と分けて扱います。
 
 ## 技術スタック
 
 | 分野 | 技術 | 用途 |
 | --- | --- | --- |
-| インフラ | AWS VPC、EC2、EBS、S3 | ネットワーク、サーバー、World の保存とバックアップ |
-| インフラの構築 | Terraform、AWS provider | AWS リソースの定義、変更、撤去 |
-| サーバー | Minecraft Java Edition、Linux、systemd | サーバーの起動・停止とサービス管理 |
-| セキュリティ | IAM、Security Group、Systems Manager、KMS | 権限管理、通信制限、安全な管理経路、暗号化 |
-| 監視 | CloudWatch、CloudWatch Agent、SNS | メトリクス・ログの収集とメール通知 |
-| 自動化・テスト | Bash、Python | バックアップ・復旧処理とローカル模擬テスト |
-| CI/CD | GitHub Actions、OIDC、TFLint、Trivy | 認証、Terraform の検査、セキュリティ検査 |
-| 今後の演習 | AWS Backup、Docker、ECR、ECS/Fargate、internal ALB | バックアップ復旧と管理 API のコンテナ運用 |
+| AWS 基盤 | VPC、EC2、EBS、S3 | ネットワーク、Minecraft サーバー、World の保存 |
+| Infrastructure as Code | Terraform、AWS provider | リソースの定義、変更、再構築、撤去 |
+| サーバー | Minecraft Java Edition、Linux、systemd | 起動・停止とサービス管理 |
+| スクリプト・テスト | Bash、Python | ストレージ確認、バックアップ・復旧、模擬テスト |
+| セキュリティ | IAM、Security Group、Systems Manager、KMS | 最小権限、通信制限、管理経路、暗号化 |
+| 監視 | CloudWatch、CloudWatch Agent、SNS | メトリクス・ログ収集と通知 |
+| CI/CD | GitHub Actions、OIDC、TFLint、Trivy | 認証、構文・設定・セキュリティの検査 |
+| 追加演習で使用予定 | AWS Backup、Go、Docker、ECR、ECS/Fargate、internal ALB | 別方式の復旧と管理 API のコンテナ運用 |
 
 ## このプロジェクトで学ぶこと
 
-- **AWS と Terraform**：ネットワーク、サーバー、ストレージの関係と、構成をコードで再現・変更する方法。
-- **Linux とサーバー運用**：systemd によるプロセス管理、ディスクのマウント確認、ログを使った調査。
-- **セキュリティ**：最小権限、通信制限、暗号化、SSH を公開しない管理方法。
-- **監視と障害対応**：メトリクスとログから異常を見つけ、原因を調べる方法。
-- **バックアップと復旧**：データを保存し、サーバー消失後に復元する手順と、失われる変更の範囲。
-- **CI/CD とコンテナ**：変更の検査、GitHub Actions からの認証、コンテナのデプロイとロールバック。
-- **費用と撤去**：AWS リソースの寿命を管理し、演習終了後に残置と費用を確認する方法。
+- **AWS と Terraform**：ネットワーク・サーバー・ストレージの関係を理解し、同じ構成をコードから再現する。
+- **Linux とセキュリティ**：プロセス、ディスク、ファイル権限、IAM と通信経路を管理する。
+- **監視と障害調査**：メトリクスとログを使い、異常の原因と修正前後の違いを説明する。
+- **バックアップと復旧**：整合性のあるデータを保存し、復旧にかかる時間と失われる変更を確認する。
+- **CI/CD とコンテナ**：変更を検査して反映し、デプロイに失敗した場合に以前の状態へ戻す。
+- **費用とリソース管理**：環境とデータの寿命を決め、撤去後の残置や課金も確認する。
 
 ## 現在の状態
 
-EC2 上での Minecraft 起動・接続と、World 用 EBS を維持した EC2 交換・撤去を AWS で確認済みです。バックアップ・復旧と監視・通知はコードを準備しましたが、一連の実 AWS 検証はこれからです。現在はローカル作業を進めています。
+EC2 上での Minecraft 起動・接続、World 用 EBS を維持した EC2 交換、演習環境の撤去を AWS で確認済みです。バックアップ・復旧と監視・通知はコードを準備し、現在はローカルで検証しています。一連の実 AWS 復旧・通知確認と、コンテナ運用などの追加演習はこれからです。
