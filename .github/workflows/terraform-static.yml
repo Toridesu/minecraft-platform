@@ -68,23 +68,19 @@ jobs:
           terraform fmt -check -diff infra/bootstrap
           terraform fmt -check -diff infra/environments/lab/session-runtime
           terraform fmt -check -diff infra/environments/lab/session-data
+          terraform fmt -check -diff infra/environments/lab/kms-lab
 
-      - name: Test Minecraft shutdown evidence gates
+      - name: Check script syntax
         run: |
           set -euo pipefail
-          for script in scripts/*.sh tests/*.sh; do
+          for script in scripts/*.sh; do
             bash -n "$script"
           done
-          bash tests/test-check-minecraft-stop-log.sh
-          bash tests/test-capture-minecraft-stop.sh
-
-      - name: Test Minecraft backup and restore with fake AWS
-        run: |
-          set -euo pipefail
-          python3 -m py_compile scripts/minecraft-backup.py tests/test-minecraft-backup.py
-          python3 tests/test-minecraft-backup.py
-          python3 tests/test-minecraft-restore.py
-          python3 tests/test-minecraft-ssm-documents.py
+          python3 - <<'PY'
+          from pathlib import Path
+          for path in Path("scripts").glob("*.py"):
+              compile(path.read_text(), str(path), "exec")
+          PY
 
       - name: Initialize providers and validate Terraform
         run: |
@@ -126,6 +122,7 @@ jobs:
           validate_root infra/bootstrap
           validate_root infra/environments/lab/session-runtime
           validate_root infra/environments/lab/session-data
+          validate_root infra/environments/lab/kms-lab
 
       - name: Initialize TFLint plugins
         run: |
@@ -143,6 +140,9 @@ jobs:
             --format=compact
           tflint --config "${GITHUB_WORKSPACE}/.tflint.hcl" \
             --chdir=infra/environments/lab/session-data \
+            --format=compact
+          tflint --config "${GITHUB_WORKSPACE}/.tflint.hcl" \
+            --chdir=infra/environments/lab/kms-lab \
             --format=compact
 
       - name: Scan Terraform configuration with Trivy

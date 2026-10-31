@@ -35,3 +35,9 @@ variable "expires_at" {
   description = "Expiration tag; cleanup must be performed explicitly."
   type        = string
 }
+
+variable "enable_aws_backup_profile" {
+  description = "Define the optional on-demand AWS Backup lab vault and service role."
+  type        = bool
+  default     = false
+}

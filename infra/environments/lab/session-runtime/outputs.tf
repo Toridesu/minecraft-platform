@@ -13,6 +13,15 @@ output "name_prefix" {
   value       = local.name_prefix
 }
 
+output "world_volume" {
+  description = "World EBS identity and AZ for the optional AWS Backup exercise."
+  value = {
+    id                = aws_ebs_volume.minecraft_data.id
+    arn               = aws_ebs_volume.minecraft_data.arn
+    availability_zone = aws_ebs_volume.minecraft_data.availability_zone
+  }
+}
+
 output "backup_document" {
   description = "Fixed backup document name and version; pin this version when invoking."
   value = var.backup_bucket_arn != "" ? {
