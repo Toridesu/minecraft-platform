@@ -1,0 +1,4 @@
+{
+  "use_default": false,
+  "include_claim_keys": ["repository_owner_id", "repository_id", "ref", "environment"]
+}

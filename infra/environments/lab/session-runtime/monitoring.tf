@@ -164,10 +164,10 @@ data "aws_iam_policy_document" "monitoring_agent" {
 }
 
 resource "aws_iam_role_policy" "monitoring_agent" {
-  count = local.monitoring_enabled ? 1 : 0
+  count = local.monitoring_enabled && local.manage_instance_iam ? 1 : 0
 
   name   = "${local.name_prefix}-monitoring-agent"
-  role   = aws_iam_role.minecraft_instance.name
+  role   = aws_iam_role.minecraft_instance[0].name
   policy = data.aws_iam_policy_document.monitoring_agent[0].json
 }
 

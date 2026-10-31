@@ -2,9 +2,10 @@ locals {
   github_oidc_url      = "https://token.actions.githubusercontent.com"
   github_oidc_audience = "sts.amazonaws.com"
 
-  github_subject_prefix = "repo:Toridesu@160250540/minecraft-platform@1376681181"
+  # Requires .github/oidc-subject.json; repository settings are not changed here.
+  github_subject_prefix = "repository_owner_id:160250540:repository_id:1376681181:ref:refs/heads/main"
 
-  github_plan_subject = "${local.github_subject_prefix}:ref:refs/heads/main"
+  github_plan_subject = "${local.github_subject_prefix}:environment:lab-plan"
 
   github_apply_subject = "${local.github_subject_prefix}:environment:lab-apply"
 }
@@ -65,10 +66,5 @@ data "aws_iam_policy_document" "github_apply_assume_role" {
       values   = [local.github_apply_subject]
     }
 
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:ref"
-      values   = ["refs/heads/main"]
-    }
   }
 }

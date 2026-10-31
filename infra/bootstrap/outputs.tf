@@ -22,3 +22,8 @@ output "github_apply_role_arn" {
   description = "GitHub Actions Terraform apply role ARN."
   value       = aws_iam_role.github_apply.arn
 }
+
+output "github_ci_instance_profile_name" {
+  description = "Persistent instance profile passed by CI; not destroyed with runtime."
+  value       = aws_iam_instance_profile.ci_minecraft.name
+}

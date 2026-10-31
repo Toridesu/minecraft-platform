@@ -37,3 +37,11 @@ output "restore_document" {
     version = aws_ssm_document.minecraft_restore[0].latest_version
   } : null
 }
+
+output "ci_runtime" {
+  value = {
+    instance_id = aws_instance.minecraft.id
+    volume_id   = aws_ebs_volume.minecraft_data.id
+    vpc_id      = aws_vpc.lab.id
+  }
+}

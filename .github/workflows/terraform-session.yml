@@ -1,0 +1,121 @@
+name: Terraform disposable session
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Plan, apply then cleanup, or retry cleanup
+        type: choice
+        options: [plan, apply, cleanup]
+        default: plan
+        required: true
+      run_id:
+        description: Unique disposable RunId (lowercase, max 24 characters)
+        required: true
+        type: string
+      expires_at:
+        description: UTC expiry within 24h, e.g. 2026-11-01T03:00:00Z
+        required: true
+        type: string
+      source_sha:
+        description: Full current main SHA; plan and apply must use the same SHA
+        required: true
+        type: string
+      allowed_client_cidr:
+        description: Optional single IPv4 /32; blank keeps inbound closed
+        type: string
+      plan_sha256:
+        description: Apply only; SHA-256 from the plan summary
+        type: string
+      plan_version:
+        description: Apply only; S3 VersionId from the plan summary
+        type: string
+      confirmation:
+        description: Apply/cleanup only; DISPOSABLE followed by colon and RunId
+        type: string
+      estimate_usd:
+        description: Reviewed session estimate, below 2 USD (target 1 USD)
+        required: true
+        default: "99"
+        type: string
+      cost_reviewed:
+        description: I reviewed fees, monthly budget, and disposable deletion scope
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pmp-lab
+  cancel-in-progress: false
+
+jobs:
+  session:
+    # Keep this repository variable absent/false during code-only learning.
+    if: >-
+      vars.ENABLE_LAB_AWS == 'true' &&
+      github.repository == 'Toridesu/minecraft-platform' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    environment: ${{ inputs.operation == 'plan' && 'lab-plan' || 'lab-apply' }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ENABLE_LAB_AWS: ${{ vars.ENABLE_LAB_AWS }}
+      LAB_ACCOUNT_ID: ${{ vars.LAB_ACCOUNT_ID }}
+      LAB_OWNER: ${{ vars.LAB_OWNER }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+      LAB_RUN_ID: ${{ inputs.run_id }}
+      EXPIRES_AT: ${{ inputs.expires_at }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      CLIENT_CIDR: ${{ inputs.allowed_client_cidr }}
+      PLAN_SHA256: ${{ inputs.plan_sha256 }}
+      PLAN_VERSION: ${{ inputs.plan_version }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      ESTIMATE_USD: ${{ inputs.estimate_usd }}
+      COST_REVIEWED: ${{ inputs.cost_reviewed }}
+      OPERATION: ${{ inputs.operation }}
+      AWS_EC2_METADATA_DISABLED: "true"
+      TF_IN_AUTOMATION: "true"
+      CHECKPOINT_DISABLE: "1"
+    steps:
+      - name: Checkout exact workflow revision
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check inputs before AWS authentication
+        run: |
+          set -euo pipefail
+          python3 - <<'PYTHON'
+          import os
+          import runpy
+          runpy.run_path("scripts/terraform-session.py")["configuration"](os.environ["OPERATION"])
+          PYTHON
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: "1.17.0"
+          terraform_wrapper: false
+
+      - name: Assume the dedicated role using OIDC
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.LAB_ACCOUNT_ID }}:role/minecraft-platform-github-${{ inputs.operation == 'plan' && 'plan' || 'apply' }}
+          aws-region: ap-northeast-1
+          role-duration-seconds: 3600
+          allowed-account-ids: ${{ vars.LAB_ACCOUNT_ID }}
+          mask-aws-account-id: true
+          unset-current-credentials: true
+
+      - name: Execute the disposable session
+        run: |
+          set -euo pipefail
+          python3 scripts/terraform-session.py "$OPERATION" --execute

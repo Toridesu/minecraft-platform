@@ -82,3 +82,9 @@ variable "monitoring_email" {
   default     = ""
   sensitive   = true
 }
+
+variable "existing_instance_profile_name" {
+  description = "Bootstrap-managed CI profile; empty keeps standalone lab IAM resources."
+  type        = string
+  default     = ""
+}

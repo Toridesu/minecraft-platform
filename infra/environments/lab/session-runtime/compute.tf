@@ -3,7 +3,7 @@ resource "aws_instance" "minecraft" {
   instance_type               = "m7i.large"
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.minecraft.id]
-  iam_instance_profile        = aws_iam_instance_profile.minecraft.name
+  iam_instance_profile        = local.instance_profile
   associate_public_ip_address = true
 
   metadata_options {
@@ -19,7 +19,12 @@ resource "aws_instance" "minecraft" {
     delete_on_termination = true
 
     tags = {
-      Name = "${local.name_prefix}-minecraft-root"
+      Name        = "${local.name_prefix}-minecraft-root"
+      Project     = var.project_name
+      Environment = var.environment
+      Owner       = var.owner
+      RunId       = var.run_id
+      DataClass   = "disposable"
     }
   }
 

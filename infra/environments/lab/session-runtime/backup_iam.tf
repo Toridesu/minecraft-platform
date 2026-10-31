@@ -43,9 +43,9 @@ data "aws_iam_policy_document" "minecraft_backup" {
 }
 
 resource "aws_iam_role_policy" "minecraft_backup" {
-  count = var.backup_bucket_arn == "" ? 0 : 1
+  count = var.backup_bucket_arn != "" && local.manage_instance_iam ? 1 : 0
 
   name   = "${local.name_prefix}-minecraft-backup"
-  role   = aws_iam_role.minecraft_instance.name
+  role   = aws_iam_role.minecraft_instance[0].name
   policy = data.aws_iam_policy_document.minecraft_backup[0].json
 }

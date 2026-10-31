@@ -41,3 +41,9 @@ variable "enable_aws_backup_profile" {
   type        = bool
   default     = false
 }
+
+variable "backup_bucket_name" {
+  description = "Optional deterministic CI bucket; empty preserves the manual-lab prefix."
+  type        = string
+  default     = ""
+}

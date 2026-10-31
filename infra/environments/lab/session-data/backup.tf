@@ -1,5 +1,6 @@
 resource "aws_s3_bucket" "backup" {
-  bucket_prefix = "${local.name_prefix}-backup-"
+  bucket        = var.backup_bucket_name == "" ? null : var.backup_bucket_name
+  bucket_prefix = var.backup_bucket_name == "" ? "${local.name_prefix}-backup-" : null
   force_destroy = false
 }
 
